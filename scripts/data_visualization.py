@@ -2,10 +2,11 @@ import json
 import matplotlib
 import numpy as np
 import cv2
+from constants import *
 
 def load_sample(image_name):
-    image_path = f"../data/SA-1B-Part-000999/{image_name}.jpg"
-    json_path = f"../data/SA-1B-Part-000999/{image_name}.json"
+    image_path = f"../{DATA_DIR}/{image_name}.jpg"
+    json_path = f"../{DATA_DIR}/{image_name}.json"
     image = cv2.imread(image_path)
     if image is None:
         raise FileNotFoundError(f"Image file not found or could not be read: {image_path}")
