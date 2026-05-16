@@ -1,0 +1,10 @@
+Metric,Value
+Baseline mIoU (mean),0.8462
+Worst-case mIoU,0.0000
+Average mIoU drop,0.3376
+Maximum mIoU drop,0.9108
+Geometric sensitivity,0.002532
+Linguistic sensitivity,0.002533
+Visual sensitivity,0.002561
+Most robust config,geo_0_0_ling_10_vis_0
+Least robust config,geo_30_15_ling_20_vis_50

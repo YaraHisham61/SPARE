@@ -1,0 +1,71 @@
+# QUICK START - SAM3 Robustness Evaluation
+
+## What You Need (Choose ONE)
+
+### Option 1: Local SAM3 (Recommended)
+- HuggingFace account
+- Token from: https://huggingface.co/settings/tokens
+- ~2.5 GB disk space
+
+### Option 2: Replicate Cloud
+- Replicate account at: https://replicate.com
+- Token from: https://replicate.com/account/api-tokens
+
+---
+
+## QUICK COMMANDS
+
+### Local SAM3:
+```powershell
+# 1. Accept license: https://huggingface.co/facebook/sam3
+# 2. Get token: https://huggingface.co/settings/tokens
+# 3. Then run:
+$env:HF_TOKEN = 'hf_YOUR_TOKEN'
+cd C:\Users\Habib\Desktop\CV\project\SPARE
+uv run python scripts/evaluate_robustness.py
+```
+
+### Replicate Cloud:
+```powershell
+# 1. Get token: https://replicate.com/account/api-tokens
+# 2. Then run:
+$env:REPLICATE_API_TOKEN = 'r8_YOUR_TOKEN'
+cd C:\Users\Habib\Desktop\CV\project\SPARE
+uv run python scripts/evaluate_robustness_replicate.py
+```
+
+### Interactive (Choose Option):
+```powershell
+cd C:\Users\Habib\Desktop\CV\project\SPARE
+uv run python scripts/master_evaluation.py
+```
+
+---
+
+## Where Results Go
+```
+experiments/robustness_eval_YYYY-MM-DD_HH-MM-SS/
+├── robustness_results.csv
+├── summary_statistics.csv
+└── analysis_report.md
+```
+
+---
+
+## Fill Findings Document
+Template: `docs/claude/2026-05-07_sam3_robustness_findings_template.md`
+1. Copy values from CSVs into template
+2. Add your analysis
+3. Save as final report
+
+---
+
+## Detailed Guides
+- Full setup: `SETUP.md`
+- Step-by-step: `EXECUTION_GUIDE.md`
+- Tech details: `IMPLEMENTATION_SUMMARY.md`
+
+---
+
+**Time:** First run ~5-10 min (includes model download)
+**Format:** CSV data + markdown report + findings template
