@@ -2,87 +2,15 @@ import os
 import torch
 from pathlib import Path
 from PIL import Image
+import numpy as np
+from pycocotools import mask as mask_utils
+
 from transformers import Sam3Model, Sam3Processor
 from constants import *
 
-def load_model(device: str, use_cache=True):
-    """
-    Load SAM3 model from local cache or Hugging Face.
-    
-    Args:
-        device: Device to load model on ('cuda' or 'cpu')
-        use_cache: Whether to use cached model
-    
-    Returns:
-        Tuple of (model, processor)
-    
-    Raises:
-        RuntimeError: If model cannot be loaded
-    """
-    # Try to authenticate if token is available
-    hf_token = os.getenv("HF_TOKEN")
-    if hf_token:
-        try:
-            from huggingface_hub import login
-            login(token=hf_token, add_to_git_credential=False)
-            print(f"✓ Authenticated with HuggingFace using token")
-        except Exception as e:
-            print(f"⚠ Could not authenticate: {e}")
-    
-    root_dir = Path(__file__).parent.parent
-    local_model_dir = root_dir / MODEL_DIR
-    
-    # Try local model first if it exists
-    if local_model_dir.exists():
-        print(f"Loading model from local cache: {local_model_dir}")
-        try:
-            model = Sam3Model.from_pretrained(str(local_model_dir)).to(device)
-            processor = Sam3Processor.from_pretrained(str(local_model_dir))
-            model.eval()
-            return model, processor
-        except Exception as e:
-            print(f"⚠ Failed to load local model: {e}")
-    
-    # Try HuggingFace model
-    print(f"Loading model from Hugging Face: {MODEL_ID}")
-    try:
-        # First attempt: might have cached or token available
-        model = Sam3Model.from_pretrained(
-            MODEL_ID,
-            cache_dir=str(root_dir / "models"),
-            trust_remote_code=True
-        ).to(device)
-        processor = Sam3Processor.from_pretrained(
-            MODEL_ID,
-            cache_dir=str(root_dir / "models"),
-            trust_remote_code=True
-        )
-    except Exception as e:
-        error_msg = str(e)
-        if "gated" in error_msg.lower() or "401" in error_msg or "unauthorized" in error_msg.lower():
-            raise RuntimeError(
-                f"\n{'='*70}\n"
-                f"SAM3 MODEL ACCESS REQUIRED\n"
-                f"{'='*70}\n"
-                f"The SAM3 model is gated on Hugging Face.\n\n"
-                f"Steps to authenticate:\n"
-                f"  1. Go to: https://huggingface.co/facebook/sam3\n"
-                f"  2. Accept the license agreement\n"
-                f"  3. Create a token: https://huggingface.co/settings/tokens (select 'repo')\n"
-                f"  4. Set token in PowerShell:\n"
-                f"     [System.Environment]::SetEnvironmentVariable('HF_TOKEN', 'hf_your_token_here', 'User')\n"
-                f"  5. Restart PowerShell\n"
-                f"  6. Run this script again\n"
-                f"\nAlternatively, cache locally:\n"
-                f"  python scripts/download_model.py\n"
-                f"{'='*70}\n"
-            ) from e
-        else:
-            raise RuntimeError(
-                f"Failed to load SAM3 model: {e}\n"
-                f"Make sure you have internet and valid HF credentials."
-            ) from e
-    
+def load_model(device: str):
+    model = Sam3Model.from_pretrained(MODEL_DIR).to(device, dtype=torch.float16)
+    processor = Sam3Processor.from_pretrained(MODEL_DIR)
     model.eval()
     return model, processor
 
@@ -121,14 +49,36 @@ def run_sam3(model, processor, img, device, text_prompt='object', bboxes=None,
         return_tensors="pt"
     ).to(device)
 
+def run_sam3(model,processor,img,device,text_prompt ='visual', threshold=0.5, mask_threshold=0.5):
+    inputs = processor(images=Image.fromarray(img), text=text_prompt, return_tensors="pt").to(device, dtype=torch.float16)
+    
     with torch.no_grad():
         outputs = model(**inputs)
-
+        
     results = processor.post_process_instance_segmentation(
         outputs,
         threshold=threshold,
         mask_threshold=mask_threshold,
         target_sizes=inputs.get("original_sizes").tolist()
     )[0]
-
+    
     return results
+
+def process_results(results):
+    """Converts numpy/torch results into JSON-serializable formats with RLE masks."""
+    masks = results['masks'].cpu().numpy()
+    scores = results['scores'].cpu().numpy()
+    boxes = results['boxes'].cpu().numpy()
+    
+    instance_preds = []
+    for i in range(len(masks)):
+        mask_binary = (masks[i] > 0).astype(np.uint8)
+        rle = mask_utils.encode(np.asfortranarray(mask_binary))
+        rle['counts'] = rle['counts'].decode('utf-8')
+        
+        instance_preds.append({
+            "segmentation": rle,
+            "score": float(scores[i]),      
+            "bbox": boxes[i].tolist()       
+        })
+    return instance_preds
