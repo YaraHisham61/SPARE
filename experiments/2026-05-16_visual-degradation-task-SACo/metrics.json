@@ -1,0 +1,38 @@
+{
+  "experiment": "experiments/2026-05-16_visual-degradation-task-SACo",
+  "baseline": "visual_degradation_L0.jsonl",
+  "mode": "output stability (direct)",
+  "levels": [
+    {
+      "file": "visual_degradation_L0.jsonl",
+      "noise_level": "people",
+      "n_entries": 13258,
+      "mean_miou": 1.0,
+      "sensitivity_index": 0.0
+    },
+    {
+      "file": "visual_degradation_L10.jsonl",
+      "noise_level": 10,
+      "n_entries": 8048,
+      "skipped_no_base": 5210,
+      "mean_miou": 0.923213,
+      "sensitivity_index": -0.007679
+    },
+    {
+      "file": "visual_degradation_L25.jsonl",
+      "noise_level": 25,
+      "n_entries": 8048,
+      "skipped_no_base": 5210,
+      "mean_miou": 0.868694,
+      "sensitivity_index": -0.005252
+    },
+    {
+      "file": "visual_degradation_L50.jsonl",
+      "noise_level": 50,
+      "n_entries": 8048,
+      "skipped_no_base": 5210,
+      "mean_miou": 0.812695,
+      "sensitivity_index": -0.003746
+    }
+  ]
+}
