@@ -1,0 +1,38 @@
+{
+  "experiment": "experiments/2026-5-16_visual-degradation-flip-task",
+  "baseline": "visual_degradation_flip_none.jsonl",
+  "mode": "spatial equivariance (flip-back)",
+  "levels": [
+    {
+      "file": "visual_degradation_flip_none.jsonl",
+      "level": 0,
+      "n_entries": 10548,
+      "mean_miou": 1.0,
+      "sensitivity_index": 0.0
+    },
+    {
+      "file": "visual_degradation_flip_0.jsonl",
+      "level": 0,
+      "n_entries": 9443,
+      "skipped_no_base": 1105,
+      "mean_miou": 0.705172,
+      "sensitivity_index": -0.294828
+    },
+    {
+      "file": "visual_degradation_flip_1.jsonl",
+      "level": 1,
+      "n_entries": 9443,
+      "skipped_no_base": 1105,
+      "mean_miou": 0.439278,
+      "sensitivity_index": -0.560722
+    },
+    {
+      "file": "visual_degradation_flip_2.jsonl",
+      "level": 2,
+      "n_entries": 9443,
+      "skipped_no_base": 1105,
+      "mean_miou": 0.431442,
+      "sensitivity_index": -0.284279
+    }
+  ]
+}

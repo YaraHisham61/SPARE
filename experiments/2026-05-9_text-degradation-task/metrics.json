@@ -1,0 +1,38 @@
+{
+  "experiment": "experiments/2026-05-9_text-degradation-task",
+  "baseline": "text_degradation_L0.jsonl",
+  "mode": "output stability (direct)",
+  "levels": [
+    {
+      "file": "text_degradation_L0.jsonl",
+      "noise_level": "people",
+      "n_entries": 13258,
+      "mean_miou": 1.0,
+      "sensitivity_index": 0.0
+    },
+    {
+      "file": "text_degradation_L1.jsonl",
+      "noise_level": 1,
+      "n_entries": 8048,
+      "skipped_no_base": 5210,
+      "mean_miou": 0.323449,
+      "sensitivity_index": -0.676551
+    },
+    {
+      "file": "text_degradation_L2.jsonl",
+      "noise_level": 2,
+      "n_entries": 8048,
+      "skipped_no_base": 5210,
+      "mean_miou": 0.148011,
+      "sensitivity_index": -0.425994
+    },
+    {
+      "file": "text_degradation_L3.jsonl",
+      "noise_level": 3,
+      "n_entries": 8048,
+      "skipped_no_base": 5210,
+      "mean_miou": 0.074289,
+      "sensitivity_index": -0.30857
+    }
+  ]
+}
