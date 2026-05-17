@@ -1,0 +1,38 @@
+{
+  "experiment": "experiments/2026-5-16_visual-degradation-flip-task-SACo",
+  "baseline": "visual_degradation_flip_none.jsonl",
+  "mode": "output stability (direct)",
+  "levels": [
+    {
+      "file": "visual_degradation_flip_none.jsonl",
+      "noise_level": "none",
+      "n_entries": 13258,
+      "mean_miou": 1.0,
+      "sensitivity_index": 0.0
+    },
+    {
+      "file": "visual_degradation_flip_both.jsonl",
+      "noise_level": "both",
+      "n_entries": 8046,
+      "skipped_no_base": 5212,
+      "mean_miou": 0.089403,
+      "sensitivity_index": -0.910597
+    },
+    {
+      "file": "visual_degradation_flip_h.jsonl",
+      "noise_level": "h",
+      "n_entries": 8046,
+      "skipped_no_base": 5212,
+      "mean_miou": 0.20402,
+      "sensitivity_index": -0.79598
+    },
+    {
+      "file": "visual_degradation_flip_v.jsonl",
+      "noise_level": "v",
+      "n_entries": 8046,
+      "skipped_no_base": 5212,
+      "mean_miou": 0.134462,
+      "sensitivity_index": -0.865538
+    }
+  ]
+}
