@@ -1,11 +1,10 @@
 {
   "experiment": "experiments/2026-05-16_visual-degradation-task-SACo",
   "baseline": "visual_degradation_L0.jsonl",
-  "mode": "output stability (direct)",
   "levels": [
     {
       "file": "visual_degradation_L0.jsonl",
-      "noise_level": "people",
+      "noise_level": 0,
       "n_entries": 13258,
       "mean_miou": 1.0,
       "sensitivity_index": 0.0

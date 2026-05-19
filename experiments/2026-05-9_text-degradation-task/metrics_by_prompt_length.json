@@ -1,0 +1,95 @@
+{
+  "experiment": "experiments/2026-05-9_text-degradation-task",
+  "baseline": "text_degradation_L0.jsonl",
+  "char_stats": {
+    "1-word": {
+      "n": 1451,
+      "mean_chars": 5.8,
+      "min_chars": 3,
+      "max_chars": 12
+    },
+    "2-word": {
+      "n": 4665,
+      "mean_chars": 9.1,
+      "min_chars": 3,
+      "max_chars": 26
+    },
+    "3+-word": {
+      "n": 7142,
+      "mean_chars": 17.0,
+      "min_chars": 7,
+      "max_chars": 53
+    }
+  },
+  "levels": {
+    "1": {
+      "1-word": {
+        "n": 1003,
+        "skipped": 448,
+        "mean_miou": 0.02671,
+        "sensitivity_index": -0.97329,
+        "eff_corruption_rate": 0.1724
+      },
+      "2-word": {
+        "n": 3005,
+        "skipped": 1660,
+        "mean_miou": 0.207705,
+        "sensitivity_index": -0.792295,
+        "eff_corruption_rate": 0.1099
+      },
+      "3+-word": {
+        "n": 4040,
+        "skipped": 3102,
+        "mean_miou": 0.483212,
+        "sensitivity_index": -0.516788,
+        "eff_corruption_rate": 0.0588
+      }
+    },
+    "2": {
+      "1-word": {
+        "n": 1003,
+        "skipped": 448,
+        "mean_miou": 0.008844,
+        "sensitivity_index": -0.495578,
+        "eff_corruption_rate": 0.3448
+      },
+      "2-word": {
+        "n": 3005,
+        "skipped": 1660,
+        "mean_miou": 0.052778,
+        "sensitivity_index": -0.473611,
+        "eff_corruption_rate": 0.2198
+      },
+      "3+-word": {
+        "n": 4040,
+        "skipped": 3102,
+        "mean_miou": 0.253397,
+        "sensitivity_index": -0.373301,
+        "eff_corruption_rate": 0.1176
+      }
+    },
+    "3": {
+      "1-word": {
+        "n": 1003,
+        "skipped": 448,
+        "mean_miou": 0.001975,
+        "sensitivity_index": -0.332675,
+        "eff_corruption_rate": 0.5172
+      },
+      "2-word": {
+        "n": 3005,
+        "skipped": 1660,
+        "mean_miou": 0.017268,
+        "sensitivity_index": -0.327577,
+        "eff_corruption_rate": 0.3297
+      },
+      "3+-word": {
+        "n": 4040,
+        "skipped": 3102,
+        "mean_miou": 0.134655,
+        "sensitivity_index": -0.288448,
+        "eff_corruption_rate": 0.1765
+      }
+    }
+  }
+}

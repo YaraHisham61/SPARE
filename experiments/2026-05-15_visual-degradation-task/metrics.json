@@ -4,14 +4,14 @@
   "levels": [
     {
       "file": "visual_degradation_sigma0.jsonl",
-      "sigma": 0,
+      "level": 0,
       "n_entries": 10548,
       "mean_miou": 1.0,
       "sensitivity_index": 0.0
     },
     {
       "file": "visual_degradation_sigma10.jsonl",
-      "sigma": 10,
+      "level": 10,
       "n_entries": 9443,
       "skipped_no_base": 1105,
       "mean_miou": 0.758296,
@@ -19,7 +19,7 @@
     },
     {
       "file": "visual_degradation_sigma25.jsonl",
-      "sigma": 25,
+      "level": 25,
       "n_entries": 9442,
       "skipped_no_base": 1105,
       "mean_miou": 0.660726,
@@ -27,7 +27,7 @@
     },
     {
       "file": "visual_degradation_sigma50.jsonl",
-      "sigma": 50,
+      "level": 50,
       "n_entries": 9442,
       "skipped_no_base": 1105,
       "mean_miou": 0.588392,

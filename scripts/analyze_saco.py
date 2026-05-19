@@ -6,25 +6,24 @@
 #          Takes any experiment directory + baseline file; computes mIoU for every
 #          other JSONL vs baseline. Works for visual noise, flip, and text degradation.
 #          Supports --invert-flip to flip masks back before IoU (spatial equivariance metric).
+# Refined: 2026-05-19 — unified flip handling per paper §Flips (Eq. 5–6):
+#          compute direct mIoU + flip-back mIoU + ρ in one pass for flip experiments;
+#          exclude SI for flip conditions (categorical, no numeric magnitude);
+#          remove --invert-flip flag (auto-detected); fix get_noise_level for level=0 baseline.
 
 """
 Usage
 -----
-    python -m scripts.analyze_saco <experiment_dir> <baseline_jsonl> [--invert-flip]
+    python -m scripts.analyze_saco <experiment_dir> <baseline_jsonl>
 
 Examples
 --------
-    # SACo flip — output stability (direct comparison, no spatial alignment)
+    # SACo flip — direct + flip-back mIoU + rho computed in one pass
     python -m scripts.analyze_saco \\
         experiments/2026-5-16_visual-degradation-flip-task-SACo \\
         visual_degradation_flip_none.jsonl
 
-    # SACo flip — spatial equivariance (flip masks back before IoU)
-    python -m scripts.analyze_saco \\
-        experiments/2026-5-16_visual-degradation-flip-task-SACo \\
-        visual_degradation_flip_none.jsonl --invert-flip
-
-    # SACo visual noise (once L0 file exists)
+    # SACo visual noise
     python -m scripts.analyze_saco \\
         experiments/2026-05-16_visual-degradation-task-SACo \\
         visual_degradation_L0.jsonl
@@ -36,8 +35,7 @@ Examples
 
 Output
 ------
-    <experiment_dir>/metrics.json          (direct comparison)
-    <experiment_dir>/metrics_flipped.json  (with --invert-flip)
+    <experiment_dir>/metrics.json
 """
 
 import argparse
@@ -58,7 +56,7 @@ def _enc(rle: dict) -> dict:
 
 
 def mean_miou_rles(pred_rles: list, gt_rles: list) -> float:
-    """Best-match mIoU using pycocotools C backend — fast path for non-flip comparisons."""
+    """Best-match mIoU (Eq. 1–2): for each pred mask find max-IoU baseline mask, then average."""
     if not pred_rles or not gt_rles:
         return 0.0
     pred_enc = [_enc(r) for r in pred_rles]
@@ -70,11 +68,7 @@ def mean_miou_rles(pred_rles: list, gt_rles: list) -> float:
 
 
 # flip_type → inverse transform applied to (H, W) mask arrays
-# Integer keys match the mode used in the data generation script (0=h, 1=v, 2=both)
 _FLIP_FN = {
-    0:           lambda m: m[:, ::-1],
-    1:           lambda m: m[::-1, :],
-    2:           lambda m: m[::-1, ::-1],
     "h":         lambda m: m[:, ::-1],
     "v":         lambda m: m[::-1, :],
     "both":      lambda m: m[::-1, ::-1],
@@ -95,7 +89,7 @@ def _detect_flip(level) -> int | str | None:
 
 
 def mean_miou_rles_flipped(pred_rles: list, gt_rles: list, flip_key: str) -> float:
-    """Decode pred masks, invert the flip, then compute vectorised best-match mIoU."""
+    """Decode pred masks, invert the flip, then compute vectorised best-match mIoU (Eq. 5)."""
     if not pred_rles or not gt_rles:
         return 0.0
 
@@ -132,18 +126,20 @@ def load_jsonl(path: Path) -> dict:
     return data
 
 
+# REFINED [old]: return entry.get("noise_level") or entry.get("noisy_prompt") →
+# [new]: None-safe check so level=0 (baseline) is not swallowed by the or-shortcut
 def get_noise_level(entry: dict):
-    """Extract noise_level (may be int or str)."""
-    return entry.get("noise_level") or entry.get("noisy_prompt")
+    """Extract noise_level (may be int or str); None-safe for level=0 baseline."""
+    if entry.get("noise_level") is not None:
+        return entry["noise_level"]
+    return entry.get("noisy_prompt")
 
 
 # ── Analysis ──────────────────────────────────────────────────────────────────
 
-def run(exp_dir: Path, baseline_path: Path, invert_flip: bool = False) -> None:
-    mode = "spatial equivariance (flip-back)" if invert_flip else "output stability (direct)"
+def run(exp_dir: Path, baseline_path: Path) -> None:
     print(f"Experiment : {exp_dir}")
-    print(f"Baseline   : {baseline_path.name}")
-    print(f"Mode       : {mode}\n")
+    print(f"Baseline   : {baseline_path.name}\n")
 
     print("Loading baseline...")
     baseline = load_jsonl(baseline_path)
@@ -158,13 +154,16 @@ def run(exp_dir: Path, baseline_path: Path, invert_flip: bool = False) -> None:
         return
 
     baseline_level = get_noise_level(next(iter(baseline.values())))
-    levels = [{
-        "file":              baseline_path.name,
-        "noise_level":       baseline_level,
-        "n_entries":         len(baseline),
-        "mean_miou":         1.0,
-        "sensitivity_index": 0.0,
-    }]
+    # REFINED [old]: always included sensitivity_index: 0.0 → [new]: only for numeric levels
+    baseline_entry = {
+        "file":      baseline_path.name,
+        "noise_level": baseline_level,
+        "n_entries": len(baseline),
+        "mean_miou": 1.0,
+    }
+    if isinstance(baseline_level, (int, float)):
+        baseline_entry["sensitivity_index"] = 0.0
+    levels = [baseline_entry]
 
     for fpath in other_files:
         print(f"\nLoading {fpath.name}...")
@@ -174,7 +173,8 @@ def run(exp_dir: Path, baseline_path: Path, invert_flip: bool = False) -> None:
         if missing:
             print(f"  ⚠  {missing} (image, prompt) pairs missing — skipped.")
 
-        miou_sum, count, skipped = 0.0, 0, 0
+        # REFINED [old]: separate invert_flip flag → [new]: auto-detected per file
+        direct_sum, flipback_sum, count, skipped = 0.0, 0.0, 0, 0
         level     = None
         flip_key  = None
 
@@ -187,34 +187,59 @@ def run(exp_dir: Path, baseline_path: Path, invert_flip: bool = False) -> None:
 
             if level is None:
                 level    = get_noise_level(data[key])
-                flip_key = _detect_flip(level) if invert_flip else None
+                flip_key = _detect_flip(level)
+
+            # Direct comparison — Eq. 1–2
+            direct_sum += mean_miou_rles(pred_rles, base_rles)
 
             if flip_key is not None:
-                miou_sum += mean_miou_rles_flipped(pred_rles, base_rles, flip_key)
-            else:
-                miou_sum += mean_miou_rles(pred_rles, base_rles)
+                # Flip-back comparison — Eq. 5
+                flipback_sum += mean_miou_rles_flipped(pred_rles, base_rles, flip_key)
+
             count += 1
 
-        miou = miou_sum / (count or 1)
-        si   = round((miou - 1.0) / level, 6) if isinstance(level, (int, float)) and level != 0 else round(miou - 1.0, 6)
+        direct_miou = direct_sum / (count or 1)
 
-        levels.append({
-            "file":              fpath.name,
-            "noise_level":       level,
-            "n_entries":         count,
-            "skipped_no_base":   skipped,
-            "mean_miou":         round(miou, 6),
-            "sensitivity_index": si,
-        })
-        print(f"  level={level}  mIoU={miou:.4f}  S={si}  n={count}  skipped={skipped}")
+        # REFINED [old]: single mIoU + SI branch with wrong else for string levels →
+        # [new]: separate flip vs. noise branches; SI excluded for flip (paper §Output-Stability)
+        if flip_key is not None:
+            flipback_miou = flipback_sum / (count or 1)
+            denom = 1.0 - direct_miou
+            # Eq. 6: misregistration fraction
+            rho = (flipback_miou - direct_miou) / denom if denom > 1e-10 else 0.0
+            record = {
+                "file":            fpath.name,
+                "noise_level":     level,
+                "n_entries":       count,
+                "skipped_no_base": skipped,
+                "direct_miou":     round(direct_miou, 6),
+                "flipback_miou":   round(flipback_miou, 6),
+                "rho":             round(rho, 6),
+            }
+            print(f"  flip={level}  direct={direct_miou:.4f}  "
+                  f"flipback={flipback_miou:.4f}  ρ={rho:.4f}  "
+                  f"n={count}  skipped={skipped}")
+        else:
+            # Eq. 3: sensitivity index (numeric levels only)
+            si = round((direct_miou - 1.0) / level, 6) if isinstance(level, (int, float)) and level != 0 else 0.0
+            record = {
+                "file":              fpath.name,
+                "noise_level":       level,
+                "n_entries":         count,
+                "skipped_no_base":   skipped,
+                "mean_miou":         round(direct_miou, 6),
+                "sensitivity_index": si,
+            }
+            print(f"  level={level}  mIoU={direct_miou:.4f}  S={si}  n={count}  skipped={skipped}")
 
-    suffix   = "_flipped" if invert_flip else ""
-    out_path = exp_dir / f"metrics{suffix}.json"
+        levels.append(record)
+
+    # REFINED [old]: suffix/_flipped output path → [new]: always metrics.json (mode inferred from records)
+    out_path = exp_dir / "metrics.json"
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump({
             "experiment":  str(exp_dir),
             "baseline":    baseline_path.name,
-            "mode":        mode,
             "levels":      levels,
         }, f, indent=2)
     print(f"\nSaved → {out_path}")
@@ -226,11 +251,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="mIoU analysis for SACo-format experiments.")
     parser.add_argument("experiment_dir", type=Path, help="Path to experiment directory")
     parser.add_argument("baseline_jsonl", type=str,  help="Baseline JSONL filename (inside experiment_dir)")
-    parser.add_argument(
-        "--invert-flip", action="store_true",
-        help="Flip predicted masks back to original orientation before IoU (spatial equivariance metric). "
-             "Auto-detects flip type from noise_level field. Saves to metrics_flipped.json.",
-    )
+    # REFINED [old]: --invert-flip flag → [new]: removed; flip-back + rho auto-computed when flip detected
     args = parser.parse_args()
 
     exp_dir       = args.experiment_dir
@@ -241,4 +262,4 @@ if __name__ == "__main__":
     if not baseline_path.exists():
         raise FileNotFoundError(f"Baseline file not found: {baseline_path}")
 
-    run(exp_dir, baseline_path, invert_flip=args.invert_flip)
+    run(exp_dir, baseline_path)

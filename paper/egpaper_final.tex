@@ -170,7 +170,6 @@ be meaningfully corrupted.
 The second pipeline is invoking SAM~3 with the concept-level text prompt stored in each SACo-Gold record (e.g.\ \texttt{"wheel"}, \texttt{"tree branch"}), drawn from the SA-1B captioner subset of SACo-Gold~\cite{meta2025saco} (13,258 image concept
 pairs). All three degradation families are applied to this pipeline.
 %--------------------------------------------------------------------
-%--------------------------------------------------------------------
 \subsection{Prompt Selection for the SA-1B Pipeline}
 \label{sec:prompt-selection}
 
@@ -264,6 +263,23 @@ Given a prompt $\mathbf{p}$, exactly $\ell$ non-space character positions are
 selected uniformly at random (without replacement) and each character $c$ is replaced with a uniformly sampled lowercase letter $c' \neq c$.  Spaces are
 protected so word boundaries are preserved.  We test three levels $\ell \in \{1, 2, 3\}$, corresponding to a single-key slip, a moderately misspelled word, and a heavily corrupted label. The source image is held fixed. This degradation is applied \emph{exclusively} to the SACo-Gold pipeline.
 
+% \paragraph{Prompt-length stratification.}
+Because $\ell$ is an absolute character count, its \emph{effective} corruption intensity depends on prompt length.  A single substitution on a 4-character prompt corrupts 25\% of its characters, whereas the
+same substitution on a 15-character phrase corrupts only 7\%.  To test whether SAM~3's linguistic fragility reflects this asymmetry, we partition SACo-Gold prompts into three word-count buckets: \textbf{1-word} (1{,}451 pairs, mean
+5.8 non-space characters), \textbf{2-word} (4{,}665 pairs, mean 9.1), and
+\textbf{3\kern0pt+\kern0pt-word} (7{,}142 pairs, mean 17.0).  For each bucket
+and each level $\ell$, we compute mIoU and SI independently, and report the
+\emph{effective corruption rate}
+%
+\begin{equation}
+  \eta(\ell, b) = \frac{\ell}{\bar{c}_b},
+  \label{eq:eff-corruption}
+\end{equation}
+%
+where $\bar{c}_b$ is the mean non-space character count of bucket $b$.
+$\eta$ normalizes the noise level by prompt length, making fragility
+comparable between buckets on the same footing.  Results appear in
+\S\ref{sec:results-text-length}.
 %--------------------------------------------------------------------
 \subsection{Visual Degradation: Gaussian Noise}
 The source image is corrupted channel-wise as:
@@ -348,8 +364,28 @@ All experiments are run with a single random seed as gaussian noise sampling and
 %---------------------------------------------------------------------
 \section{Results}
 \label{sec:results}
-
 %--------------------------------------------------------------------
+\subsection{Linguistic Fragility by Prompt Length}                      \label{sec:results-text-length}                                        Table~\ref{tab:prompt-length-si} reports mean IoU and Sensitivity Index foreach word-count bucket across noise levels $\ell \in \{1,2,3\}$.
+
+\begin{table}[h]
+\centering 
+\small 
+\begin{tabular}{lccc}
+\hline 
+Bucket & SI($\ell$=1) & SI($\ell$=2) & SI($\ell$=3) \\ 
+\hline 
+\texttt{1-word}   & -0.9733  & -0.4956  & -0.3327 \\ 
+\texttt{2-word}   &-0.7923  & -0.4736  & -0.3276 \\ 
+\texttt{3+-word}  &-0.5168  & -0.3733 &  -0.2884 \\      
+\hline 
+\end{tabular}
+\vspace{3pt}
+\caption{Sensitivity Index per prompt-length bucket under linguistic
+degradation (SACo-Gold pipeline).  A larger magnitude indicates greater fragility per unit of noise. Effective corruption rates
+at $\ell$=1 are 17\%, 11\%, and 6\% for 1-, 2-, and 3+-word buckets respectively.}
+\label{tab:prompt-length-si}
+\end{table}
+%-------------------------------------------------------------------- 
 \section{Conclusion}
 \label{sec:conc}
 %--------------------------------------------------------------------
