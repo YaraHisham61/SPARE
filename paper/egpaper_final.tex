@@ -25,7 +25,7 @@
 \begin{document}
 
 %%%%%%%%% TITLE
-\title{SPARE: Stress-testing Prompt Robustness for SAM 3}
+\title{SPARE: SAM3 Prompt Analysis and Robustness Evaluation}
 
 \author{Yara Hisham \and Aliaa Gheis \and Nouran Hany \and Sarah Elzayat \and Maryam Muhammed 
 \\
@@ -277,153 +277,59 @@ chronological) order, so prefer \cite{Alpher03,Alpher02,Authors14} to
 \end{figure*}
 
 %------------------------------------------------------------------------
-\section{Formatting your paper}
+\section{Related Work}
 
-All text must be in a two-column format. The total allowable width of the
-text area is $6\frac78$ inches (17.5 cm) wide by $8\frac78$ inches (22.54
-cm) high. Columns are to be $3\frac14$ inches (8.25 cm) wide, with a
-$\frac{5}{16}$ inch (0.8 cm) space between them. The main title (on the
-first page) should begin 1.0 inch (2.54 cm) from the top edge of the
-page. The second and following pages should begin 1.0 inch (2.54 cm) from
-the top edge. On all pages, the bottom margin should be 1-1/8 inches (2.86
-cm) from the bottom edge of the page for $8.5 \times 11$-inch paper; for A4
-paper, approximately 1-5/8 inches (4.13 cm) from the bottom edge of the
-page.
+\subsection{Promptable Segmentation}
+The release of the Segment Anything Model (SAM) \cite{kirillov2023sam} marked a paradigm shift in class-agnostic, zero-shot instance segmentation through point, box, and coarse mask prompting. This architecture was subsequently expanded to the video domain by SAM 2 \cite{ravi2024sam2}, introducing memory modules for temporal mask propagation. Most recently, SAM 3 \cite{peng2025sam3} bridged the gap between localization and high-level semantic interpretation by integrating explicit concept-level natural language prompting alongside traditional spatial indicators, utilizing foundational benchmarks like SACo-Gold \cite{meta2025saco}. While these models exhibit remarkable structural flexibility, their expansive capability surface introduces diverse vectors for behavioral failure under noisy inputs.
 
-%-------------------------------------------------------------------------
-\subsection{Margins and page numbering}
+\subsection{Robustness and Corruption Benchmarks}
+Evaluating neural networks against out-of-distribution (OOD) data and visual degradations is foundational to assessing real-world reliability. Pioneered by ImageNet-C \cite{hendrycks2019benchmarking}, the standard protocol heavily relies on applying synthetic pixel-level distortions (e.g., Gaussian noise, blurs, and environmental artifacts) to gauge model degradation. In web-scale multimodal spaces, frameworks like LAION-C \cite{li2025laionc} have adapted these principles to evaluate generalized visual models.
 
-All printed material, including text, illustrations, and charts, must be kept
-within a print area 6-7/8 inches (17.5 cm) wide by 8-7/8 inches (22.54 cm)
-high.
-Page numbers should be in footer with page numbers, centered and .75
-inches from the bottom of the page and make it start at the correct page
-number rather than the 4321 in the example.  To do this fine the line (around
-line 23)
-\begin{verbatim}
-%\ificcvfinal\pagestyle{empty}\fi
-\setcounter{page}{4321}
-\end{verbatim}
-where the number 4321 is your assigned starting page.
+Closer to our domain, initial empirical audits of the original SAM architecture \cite{wang2023empirical} highlighted its vulnerabilities to extreme low-quality inputs, inspiring architectural modifications like RobustSAM \cite{chen2024robustsam} to enhance performance on degraded images. Furthermore, the BREPS framework \cite{moskalenko2026breps} formalized bounds on how spatial prompt inaccuracies (such as bounding-box jitter) degrade segmentation outputs. However, these benchmarks heavily focus on absolute accuracy drops against static human annotations under spatial or purely visual noise, leaving the self-consistency of newer concept-driven models unexamined.
 
-Make sure the first page is numbered by commenting out the first page being
-empty on line 46
-\begin{verbatim}
-%\thispagestyle{empty}
-\end{verbatim}
+\subsection{Prompt and Linguistic Sensitivity in VLMs}
+As vision models grow increasingly reliant on textual guidance, they inherit the well-documented vulnerabilities of Vision-Language Models (VLMs) regarding prompt styling and linguistic perturbation. Recent systematic studies emphasize that multimodal architectures exhibit distinct behavioral fragility depending on prompt framing. For example, the SCAM benchmark \cite{materzynska2025scam} demonstrated how severe typographic noise and real-world misspellings degrade the reasoning paths of multimodal foundation networks. Concurrently, PARC \cite{schmalfuss2025parc} proposed a formal framework to expose systemic geometric asymmetries within VLMs when matching text expressions to visual scenes.
 
+
+\subsection{Our Distinct Contribution (SPARE)}
+While existing literature evaluates either visual degradation in isolation (\cite{chen2024robustsam, li2025laionc}), spatial prompt jitter (\cite{moskalenko2026breps}), or typographic foundation errors (\cite{materzynska2025scam}), SPARE bridges these domains. Rather than measuring absolute performance drops against static human annotations, we pioneer a dual-pipeline, output-stability paradigm to directly contrast visual versus concept-driven linguistic fragility. This allows us to quantify exactly where multimodal grounding introduces operational risks compared to generic segmentation modes.
 
 %-------------------------------------------------------------------------
-\subsection{Type-style and fonts}
+% \subsection{Illustrations, graphs, and photographs}
 
-Wherever Times is specified, Times Roman may also be used. If neither is
-available on your word processor, please use the font closest in
-appearance to Times to which you have access.
+% All graphics should be centered.  Please ensure that any point you wish to
+% make is resolvable in a printed copy of the paper.  Resize fonts in figures
+% to match the font in the body text, and choose line widths which render
+% effectively in print.  Many readers (and reviewers), even of an electronic
+% copy, will choose to print your paper in order to read it.  You cannot
+% insist that they do otherwise, and therefore must not assume that they can
+% zoom in to see tiny details on a graphic.
 
-MAIN TITLE. Center the title 1-3/8 inches (3.49 cm) from the top edge of
-the first page. The title should be in Times 14-point, boldface type.
-Capitalize the first letter of nouns, pronouns, verbs, adjectives, and
-adverbs; do not capitalize articles, coordinate conjunctions, or
-prepositions (unless the title begins with such a word). Leave two blank
-lines after the title.
-
-AUTHOR NAME(s) and AFFILIATION(s) are to be centered beneath the title
-and printed in Times 12-point, non-boldface type. This information is to
-be followed by two blank lines.
-
-The ABSTRACT and MAIN TEXT are to be in a two-column format.
-
-MAIN TEXT. Type main text in 10-point Times, single-spaced. Do NOT use
-double-spacing. All paragraphs should be indented 1 pica (approx. 1/6
-inch or 0.422 cm). Make sure your text is fully justified---that is,
-flush left and flush right. Please do not place any additional blank
-lines between paragraphs.
-
-Figure and table captions should be 9-point Roman type as in
-Figures~\ref{fig:onecol} and~\ref{fig:short}.  Short captions should be centred.
-
-\noindent Callouts should be 9-point Helvetica, non-boldface type.
-Initially capitalize only the first word of section titles and first-,
-second-, and third-order headings.
-
-FIRST-ORDER HEADINGS. (For example, {\large \bf 1. Introduction})
-should be Times 12-point boldface, initially capitalized, flush left,
-with one blank line before, and one blank line after.
-
-SECOND-ORDER HEADINGS. (For example, { \bf 1.1. Database elements})
-should be Times 11-point boldface, initially capitalized, flush left,
-with one blank line before, and one after. If you require a third-order
-heading (we discourage it), use 10-point Times, boldface, initially
-capitalized, flush left, preceded by one blank line, followed by a period
-and your text on the same line.
-
-%-------------------------------------------------------------------------
-\subsection{Footnotes}
-
-Please use footnotes\footnote {This is what a footnote looks like.  It
-often distracts the reader from the main flow of the argument.} sparingly.
-Indeed, try to avoid footnotes altogether and include necessary peripheral
-observations in
-the text (within parentheses, if you prefer, as in this sentence).  If you
-wish to use a footnote, place it at the bottom of the column on the page on
-which it is referenced. Use Times 8-point type, single-spaced.
-
-
-%-------------------------------------------------------------------------
-\subsection{References}
-
-List and number all bibliographical references in 9-point Times,
-single-spaced, at the end of your paper. When referenced in the text,
-enclose the citation number in square brackets, for
-example~\cite{Authors14}.  Where appropriate, include the name(s) of
-editors of referenced books.
-
-\begin{table}
-\begin{center}
-\begin{tabular}{|l|c|}
-\hline
-Method & Frobnability \\
-\hline\hline
-Theirs & Frumpy \\
-Yours & Frobbly \\
-Ours & Makes one's heart Frob\\
-\hline
-\end{tabular}
-\end{center}
-\caption{Results.   Ours is better.}
-\end{table}
-
-%-------------------------------------------------------------------------
-\subsection{Illustrations, graphs, and photographs}
-
-All graphics should be centered.  Please ensure that any point you wish to
-make is resolvable in a printed copy of the paper.  Resize fonts in figures
-to match the font in the body text, and choose line widths which render
-effectively in print.  Many readers (and reviewers), even of an electronic
-copy, will choose to print your paper in order to read it.  You cannot
-insist that they do otherwise, and therefore must not assume that they can
-zoom in to see tiny details on a graphic.
-
-When placing figures in \LaTeX, it's almost always best to use
-\verb+\includegraphics+, and to specify the  figure width as a multiple of
-the line width as in the example below
-{\small\begin{verbatim}
-   \usepackage[dvips]{graphicx} ...
-   \includegraphics[width=0.8\linewidth]
-                   {myfile.eps}
-\end{verbatim}
-}
-
-
-%-------------------------------------------------------------------------
-\subsection{Color}
-
-Please refer to the author guidelines on the ICCV 2017 web page for a discussion
-of the use of color in your document.
-
+% When placing figures in \LaTeX, it's almost always best to use
+% \verb+\includegraphics+, and to specify the  figure width as a multiple of
+% the line width as in the example below
+% {\small\begin{verbatim}
+%    \usepackage[dvips]{graphicx} ...
+%    \includegraphics[width=0.8\linewidth]
+%                    {myfile.eps}
+% \end{verbatim}
+% }
+% \begin{table}
+% \begin{center}
+% \begin{tabular}{|l|c|}
+% \hline
+% Method & Frobnability \\
+% \hline\hline
+% Theirs & Frumpy \\
+% Yours & Frobbly \\
+% Ours & Makes one's heart Frob\\
+% \hline
+% \end{tabular}
+% \end{center}
+% \caption{Results.   Ours is better.}
+% \end{table}
 %------------------------------------------------------------------------
 \section{Methodology}
-
 SPARE evaluates SAM~3~\cite{peng2025sam3} under systematic input corruption across two complementary pipelines that exercise different prompt modalities. Rather than comparing model outputs against ground-truth annotations,we adopt an \emph{output-stability} paradigm: we measure how consistently SAM~3 produces the same segmentation when inputs are progressively
 corrupted, relative to its own clean-input predictions.
 
@@ -436,23 +342,21 @@ We apply three degradation families: \emph{linguistic noise} on text prompts,
 
 \subsection{Evaluation Pipelines}
 %SA-1B
-\paragraph{}
 The first pipeline is invoking SAM~3 with a fixed generic text prompt (\texttt{"visual"}), causing it to operate in general instance-segmentation mode. Images are drawn from
 SA-1B~\cite{kirillov2023sam}. Only image-level degradations apply to this pipeline (Gaussian noise and spatial flips); the prompt is constant and cannot
 be meaningfully corrupted.
 %SACo-Gold
-\paragraph{}
+
 The second pipeline is invoking SAM~3 with the concept-level text prompt stored in each SACo-Gold record (e.g.\ \texttt{"wheel"}, \texttt{"tree branch"}), drawn from the SA-1B captioner subset of SACo-Gold~\cite{meta2025saco} (13,258 image concept
 pairs). All three degradation families are applied to this pipeline.
 %--------------------------------------------------------------------
 
 \subsection{Datasets}
 \label{sec:datasets}
-  \paragraph{}
   \textbf{SA-1B}~\cite{kirillov2023sam} is the large-scale segmentation dataset released  alongside SAM, comprising 11M images and 1.1B high-quality masks. We use it as the source for the SA-1B pipeline, where SAM~3 is run in general segmentation mode with a fixed generic prompt. Our evaluation subset consists of 10,548 images at baseline; after matching clean and degraded predictions,
   9,442--9,443 valid pairs remain per degradation level (1,105 entries are skipped due to absent baseline matches).
 
-  \paragraph{}
+
   \textbf{SACo-Gold}~\cite{meta2025saco} is the official SAM~3 evaluation benchmark,containing 156K image--concept pairs triple-annotated across seven subsets. We use the \emph{SA-1B captioner} subset, which provides 13,258 image concept pairs and 30,306 masks derived from natural-language captions of SA-1B images.
   This subset drives the SACo-Gold pipeline, where SAM~3 is explicitly prompted with the stored concept label. After matching, 8,046--8,048 valid pairs remain
   per degradation level (5,210 entries skipped due to absent baseline matches).
@@ -465,7 +369,7 @@ $\hat{\mathbf{M}}_0 = f_\theta(\mathbf{x}, \mathbf{p})$ and the \emph{degraded p
 $\hat{\mathbf{M}}_\ell = f_\theta(\mathbf{x}', \mathbf{p}')$ at noise level $\ell$.  Each prediction is a set of instance masks $\{m_k\}$.
 
 % Mean IoU (mIoU).
-\paragraph{}
+
 For each predicted mask $m_k \in \hat{\mathbf{M}}_\ell$ we compute the maximum
 overlap with any mask in the clean baseline:
 %
@@ -490,7 +394,7 @@ Dataset-level mIoU is the mean over all valid pairs $\mathcal{D}$:
 By construction $\mathrm{mIoU}(0) = 1.0$ for every condition.
 
 %Sensitivity Index (SI).
-\paragraph{}
+
 To compare fragility across degradation types and prompt modalities on a common scale, we normalise the stability drop by the noise magnitude:
   %
   \begin{equation}
@@ -502,16 +406,12 @@ To compare fragility across degradation types and prompt modalities on a common 
   (\S\ref{sec:flips}).
 %--------------------------------------------------------------------
 \subsection{Linguistic Degradation}
-%Implementation.
-\paragraph{}
 Given a prompt $\mathbf{p}$, exactly $\ell$ non-space character positions are
 selected uniformly at random (without replacement) and each character $c$ is replaced with a uniformly sampled lowercase letter $c' \neq c$.  Spaces are
 protected so word boundaries are preserved.  We test three levels $\ell \in \{1, 2, 3\}$, corresponding to a single-key slip, a moderately misspelled word, and a heavily corrupted label. The source image is held fixed. This degradation is applied \emph{exclusively} to the SACo-Gold pipeline.
 
 %--------------------------------------------------------------------
 \subsection{Visual Degradation: Gaussian Noise}
-%Implementation.
-\paragraph{}
 The source image is corrupted channel-wise as:
 %
 \begin{equation}
@@ -525,20 +425,17 @@ We test $\sigma \in \{10, 25, 50\}$, representing mild, moderate, and severe
 sensor degradation.  All prompts are held fixed.  This degradation is applied to \emph{both} pipelines.
 
 %Cross-modal comparison.
-\paragraph{}
+
+
 Applying identical Gaussian corruptions to both pipelines lets us attribute any mIoU gap between them solely to \emph{prompt modality}: the SA-1B pipeline uses a fixed generic prompt while SACo-Gold uses concept text labels. A consistent
 gap across all $\sigma$ levels reveals whether explicit text prompts provide more or less robust guidance to the visual encoder than the generic segmentation mode.
 
 %--------------------------------------------------------------------
 \subsection{Visual Degradation: Spatial Flips}
 \label{sec:flips}
+We test three modes: horizontal~(\textbf{h}), vertical~(\textbf{v}), and combined~(\textbf{both}). All prompts are held fixed. This degradation is applied to \emph{both} pipelines.
 
-\paragraph{}
-  We test three modes: horizontal~(\textbf{h}), vertical~(\textbf{v}), and
-  combined~(\textbf{both}). All prompts are held fixed. This degradation is
-  applied to \emph{both} pipelines.
 
-  \paragraph{}
   The primary metric is \textbf{flip-back mIoU}: the predicted mask
   $\hat{\mathbf{M}}_\phi$ is mapped back to the original coordinate frame via
   the inverse transformation $T_\phi^{-1}$ before comparison against the clean
@@ -573,27 +470,25 @@ gap across all $\sigma$ levels reveals whether explicit text prompts provide mor
 
 %-----------------------------------------------
 \section{Experimental Setup}
-
-\paragraph{}
 We evaluate SAM~3~\cite{peng2025sam3} loaded from the official pretrained checkpoint via the HuggingFace Transformers library (\texttt{Sam3Model},
 \texttt{Sam3Processor}). All inference is run in half-precision (\texttt{float16}). Instance segmentation outputs are post-processed with a confidence threshold of 0.5 and a mask binarisation threshold of 0.5,
 following the default SAM~3 evaluation configuration.
 
-\paragraph{}
+
 Experiments were conducted across two platforms: a Kaggle notebook with dual NVIDIA Tesla T4 GPUs (16\,GB VRAM each), and a personal workstation with a
 single NVIDIA RTX 2060 GPU (6\,GB VRAM).
 
-\paragraph{}
+
 For each image prompt pair, a single forward pass is performed and the resulting instance masks are encoded in COCO RLE format and appended to a JSONL
 file, one file per degradation level. This design allows each condition to be reproduced independently. All mIoU, SI, and $\rho$ values are computed offline
 by comparing each degraded-condition JSONL file against the corresponding clean-condition JSONL file.
 
-\paragraph{}
+
 Datasets are described in detail in \S\ref{sec:datasets}. The effective
 evaluation counts after baseline matching are 9,442--9,443 image pairs per degradation level for the SA-1B pipeline, and 8,046--8,048 pairs for the SACo-Gold pipeline.
 
-\paragraph{}
-Gaussian noise sampling and character substitutions involve stochastic operations. All experiments are run with a single random seed.
+
+All experiments are run with a single random seed as gaussian noise sampling and character substitutions involve stochastic operations. 
 
 %---------------------------------------------------------------------
 \section{Results}
@@ -615,4 +510,5 @@ Bounding-box prompt jitter(expanding or shifting ground-truth boxes by
 10\%--20\%)was implemented but excluded from the main evaluation.  Prior work already characterises SAM~1/2 geometric sensitivity
 thoroughly~\cite{moskalenko2026breps}; our primary contribution is the
 text-prompt and cross-modal axes, which are entirely unstudied on SAM~3. A geometric prong for SAM~3, including combined text+geometric noise, is left to future work.
+
 \end{document}
