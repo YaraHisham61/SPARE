@@ -1,0 +1,28 @@
+{
+  "summary": [
+    {
+      "prompt": "visual",
+      "file": "prompt_visual_results.jsonl",
+      "n_evaluated": 9443,
+      "skipped_no_pred": 1105,
+      "skipped_no_gt": 0,
+      "mean_miou": 0.737328
+    },
+    {
+      "prompt": "things",
+      "file": "prompt_things_results.jsonl",
+      "n_evaluated": 3,
+      "skipped_no_pred": 10545,
+      "skipped_no_gt": 0,
+      "mean_miou": 0.719874
+    },
+    {
+      "prompt": "objects",
+      "file": "prompt_objects_results.jsonl",
+      "n_evaluated": 335,
+      "skipped_no_pred": 10213,
+      "skipped_no_gt": 0,
+      "mean_miou": 0.77593
+    }
+  ]
+}

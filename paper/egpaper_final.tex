@@ -170,7 +170,41 @@ be meaningfully corrupted.
 The second pipeline is invoking SAM~3 with the concept-level text prompt stored in each SACo-Gold record (e.g.\ \texttt{"wheel"}, \texttt{"tree branch"}), drawn from the SA-1B captioner subset of SACo-Gold~\cite{meta2025saco} (13,258 image concept
 pairs). All three degradation families are applied to this pipeline.
 %--------------------------------------------------------------------
+%--------------------------------------------------------------------
+\subsection{Prompt Selection for the SA-1B Pipeline}
+\label{sec:prompt-selection}
 
+The SA-1B pipeline invokes SAM~3 with a single fixed generic text prompt
+intended to trigger \emph{general} instance-segmentation mode rather than concept-specific retrieval.  To determine the most appropriate prompt, we evaluated three candidates---\texttt{"visual"}, \texttt{"things"}, and \texttt{"objects"} on the full 10,548 image SA-1B subset by running a single forward pass per image with each prompt and measuring (i)~prediction coverage (fraction of images that receive at least one predicted mask) and (ii)~mean IoU against SA-1B ground-truth annotations.
+
+Results are summarised in Table~\ref{tab:prompt-selection}.
+\texttt{"things"} and \texttt{"objects"} caused SAM~3 to return \emph{no
+predictions} for 99.97\% and 96.8\% of images respectively, making them
+unsuitable as a baseline.  \texttt{"visual"} produced predictions on
+89.5\% of images (9,443 of 10,548) with a mean mIoU of 0.737 against
+ground truth.  Accordingly, \texttt{"visual"} was adopted as the fixed
+prompt for all SA-1B pipeline experiments.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccc}
+\hline
+Prompt & \#~Evaluated & Skipped (no pred.) & mIoU \\
+\hline
+\texttt{visual}  & 9{,}443 &  1{,}105 & 0.737 \\
+\texttt{things}  &       3 & 10{,}545 & 0.720 \\
+\texttt{objects} &     335 & 10{,}213 & 0.776 \\
+\hline
+\end{tabular}
+\vspace{3 pt}
+\caption{Prompt selection results on the SA-1B subset.
+         Skipped entries are images for which SAM~3 returned no predicted
+         masks under the given prompt.  \texttt{visual} is selected for
+         its near-universal coverage.}
+\label{tab:prompt-selection}
+\end{table}
+%---------------------------------------------------------------------
 \subsection{Datasets}
 \label{sec:datasets}
   \textbf{SA-1B}~\cite{kirillov2023sam} is the large-scale segmentation dataset released  alongside SAM, comprising 11M images and 1.1B high-quality masks. We use it as the source for the SA-1B pipeline, where SAM~3 is run in general segmentation mode with a fixed generic prompt. Our evaluation subset consists of 10,548 images at baseline; after matching clean and degraded predictions,
