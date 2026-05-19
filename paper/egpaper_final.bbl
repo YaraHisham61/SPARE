@@ -1,29 +1,59 @@
-\begin{thebibliography}{1}\itemsep=-1pt
+\begin{thebibliography}{10}\itemsep=-1pt
 
-\bibitem{Alpher02}
-A.~Alpher.
-\newblock Frobnication.
-\newblock {\em Journal of Foo}, 12(1):234--778, 2002.
+\bibitem{chen2024robustsam}
+W.-T. Chen, Y.-J. Vong, S.-Y. Kuo, S.~Ma, and J.~Wang.
+\newblock {RobustSAM}: Segment anything robustly on degraded images.
+\newblock In {\em CVPR}, 2024.
 
-\bibitem{Alpher03}
-A.~Alpher and J.~P.~N. Fotheringham-Smythe.
-\newblock Frobnication revisited.
-\newblock {\em Journal of Foo}, 13(1):234--778, 2003.
+\bibitem{hendrycks2019benchmarking}
+D.~Hendrycks and T.~Dietterich.
+\newblock Benchmarking neural network robustness to common corruptions and perturbations.
+\newblock In {\em ICLR}, 2019.
 
-\bibitem{Alpher04}
-A.~Alpher, J.~P.~N. Fotheringham-Smythe, and G.~Gamow.
-\newblock Can a machine frobnicate?
-\newblock {\em Journal of Foo}, 14(1):234--778, 2004.
+\bibitem{kirillov2023sam}
+A.~Kirillov, E.~Mintun, N.~Ravi, H.~Mao, C.~Rolland, L.~Gustafson, T.~Xiao, S.~Whitehead, A.~C. Berg, W.-Y. Lo, et~al.
+\newblock Segment anything.
+\newblock In {\em ICCV}, 2023.
 
-\bibitem{Authors14}
-Authors.
-\newblock The frobnicatable foo filter, 2014.
-\newblock Face and Gesture submission ID 324. Supplied as additional material
-  {\tt fg324.pdf}.
+\bibitem{li2025laionc}
+J.~Li et~al.
+\newblock {LAION-C}: An out-of-distribution benchmark for web-scale vision models.
+\newblock In {\em ICML}, 2025.
 
-\bibitem{Authors14b}
-Authors.
-\newblock Frobnication tutorial, 2014.
-\newblock Supplied as additional material {\tt tr.pdf}.
+\bibitem{materzynska2025scam}
+J.~Materzynska et~al.
+\newblock {SCAM}: A real-world typographic robustness evaluation for multimodal foundation models.
+\newblock {\em arXiv preprint arXiv:2504.04893}, 2025.
+
+\bibitem{meta2025saco}
+{Meta FAIR}.
+\newblock {SACo-Gold}: Dataset for concept-driven promptable segmentation.
+\newblock \url{https://huggingface.co/datasets/facebook/SACo-Gold}, 2025.
+\newblock Accessed: May 2026.
+
+\bibitem{moskalenko2026breps}
+A.~Moskalenko et~al.
+\newblock {BREPS}: Bounding-box robustness evaluation of promptable segmentation.
+\newblock In {\em AAAI}, 2026.
+
+\bibitem{peng2025sam3}
+F.~Peng et~al.
+\newblock Sam 3: Segment anything with concepts.
+\newblock In {\em ICLR}, 2026.
+
+\bibitem{ravi2024sam2}
+N.~Ravi, V.~Gabeur, Y.-T. Hu, R.~Hu, C.~Ryali, T.~Ma, H.~Khedr, R.~R{\"a}dle, C.~Rolland, L.~Gustafson, et~al.
+\newblock Sam 2: Segment anything in images and videos.
+\newblock {\em arXiv preprint arXiv:2408.00714}, 2024.
+
+\bibitem{schmalfuss2025parc}
+J.~Schmalfuss et~al.
+\newblock {PARC}: A quantitative framework uncovering the symmetries within vision language models.
+\newblock In {\em CVPR}, 2025.
+
+\bibitem{wang2023empirical}
+Y.~Wang, Y.~Zhao, and L.~Petzold.
+\newblock An empirical study on the robustness of the segment anything model ({SAM}).
+\newblock {\em arXiv preprint arXiv:2305.06422}, 2023.
 
 \end{thebibliography}

@@ -6,6 +6,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{multirow}
 
 % Include other packages here, before hyperref.
 
@@ -39,19 +40,31 @@ Cairo University Faculty of Engineering, Cairo, Egypt
 
 
 %%%%%%%%% ABSTRACT
+% REFINED [old]: "yet no systematic study" + specific dataset/mIoU numbers → [new]: softer "few studies" phrasing and qualitative results (numbers moved to body)
 \begin{abstract}
-The rise of Segment Anything, SAM~\cite{kirillov2023sam}, with its versions has greatly impacted the image segmentation industry. 
-Especially SAM~3~\cite{peng2025sam3}, whose ability to have both geometric and text prompts made a significant impact. 
-However, there is no systematic study that analyzes SAM~3~\cite{peng2025sam3} performance on degraded visuals or text prompts. 
-We introduce SPARE, the first stress-testing framework that benchmarks SAM~3~\cite{peng2025sam3} under both visual degradations and typographic corruptions. 
-Our analysis has shown that, despite slight performance degradation under visual variations, SAM~3~\cite{peng2025sam3} is highly sensitive and prone to very small changes in text prompts.
+  
+  Promptable image segmentation has rapidly expanded to accept natural-language concept prompts alongside spatial cues, though few studies have measured how the resulting models cope with noise on both input channels.  We introduce \textbf{SPARE}, an output-stability framework that probes SAM~3 under three corruption families---Gaussian image noise, spatial flips, and character-level prompt substitutions---across the SA-1B and SACo-Gold benchmarks, comparing each degraded prediction to the model's own clean-input baseline rather than to human annotations. Under strong Gaussian noise the concept-prompt pipeline remains largely stable, while even a single-character prompt substitution sharply degrades it and a few more substitutions collapse output stability almost entirely; spatial flips, by contrast, produce mostly geometric misregistration rather than semantic failure.  Linguistic input, not visual quality, drives the dominant operational risk for concept-prompted segmentation in SAM~3.
+  
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
 \section{Introduction}
 
-Image segmentation has long been treated as a purely visual task, where model inputs are 
-clean images and prompts are precise spatial coordinates. The release of SAM~\cite{kirillov2023sam} 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figs/intro_radar.pdf}
+% REFINED [old]: 9-line caption with per-axis details → [new]: 3-line caption (headline only)
+\caption{\textbf{SAM~3 robustness landscape.}
+Axes: Gaussian $\sigma\!\in\!\{10,25,50\}$, flips (H, V, H+V), text
+substitutions $\ell\!\in\!\{1,2,3\}$; radius is mIoU vs.\ the clean-input
+prediction (flip-back for flips).  SACo-Gold absorbs visual noise but
+collapses under text noise; SA-1B uses a fixed prompt and is not
+evaluated on text axes.}
+\label{fig:intro-radar}
+\end{figure}
+
+Image segmentation has long been treated as a purely visual task, where model inputs are
+clean images and prompts are precise spatial coordinates. The release of SAM~\cite{kirillov2023sam}
 and its successors challenged this assumption by enabling flexible, zero-shot segmentation 
 through points, boxes, and masks. SAM~3~\cite{peng2025sam3} takes this further, accepting 
 natural language concept prompts alongside spatial cues—a shift that makes the model 
@@ -163,7 +176,7 @@ SA-1B~\cite{kirillov2023sam}. Only image-level degradations apply to this pipeli
 be meaningfully corrupted.
 %SACo-Gold
 
-The second pipeline is invoking SAM~3 with the concept-level text prompt stored in each SACo-Gold record (e.g.\ \texttt{"wheel"}, \texttt{"tree branch"}), drawn from the SA-1B captioner subset of SACo-Gold~\cite{meta2025saco} (13,258 image concept
+The second pipeline is invoking SAM~3 with the concept-level text prompt stored in each SACo-Gold record drawn from the SA-1B captioner subset of SACo-Gold~\cite{meta2025saco} (13,258 image concept
 pairs). All three degradation families are applied to this pipeline.
 %--------------------------------------------------------------------
 \subsection{Prompt Selection for the SA-1B Pipeline}
@@ -259,10 +272,10 @@ gap across all $\sigma$ levels reveals whether explicit text prompts provide mor
 We test three modes: horizontal~(\textbf{h}), vertical~(\textbf{v}), and combined~(\textbf{both}). All prompts are held fixed. This degradation is applied to \emph{both} pipelines.
 
 
-  The primary metric is \textbf{flip-back mIoU}: the predicted mask
-  $\hat{\mathbf{M}}_\phi$ is mapped back to the original coordinate frame via
-  the inverse transformation $T_\phi^{-1}$ before comparison against the clean
-  baseline $\hat{\mathbf{M}}_0$:
+  We measure output consistency using \textbf{flip-back mIoU}: the predicted
+  mask $\hat{\mathbf{M}}_\phi$ is mapped back to the original coordinate frame
+  via the inverse transformation $T_\phi^{-1}$ before comparison against the
+  clean baseline $\hat{\mathbf{M}}_0$:
   %
   \begin{equation}
     \mathrm{mIoU}_{\mathrm{fb}}(\phi)
@@ -272,24 +285,9 @@ We test three modes: horizontal~(\textbf{h}), vertical~(\textbf{v}), and combine
     \label{eq:flipback}
   \end{equation}
   %
-  A high $\mathrm{mIoU}_{\mathrm{fb}}$ indicates the model correctly segmented the object, but in the flipped coordinate frame equivariant behaviour. A low value indicates true semantic failure independent of coordinate alignment.
-
-  To contextualise this, we also record the \textbf{direct mIoU}: the
-  uncorrected comparison of $\hat{\mathbf{M}}_\phi$ against $\hat{\mathbf{M}}_0$
-  in the original frame (Eq.~\ref{eq:miou-dataset}). Direct mIoU is expected to be low even for a perfectly equivariant model, since the mask will land in the flipped coordinate space. It serves only as the naive baseline from which the
-  misregistration fraction is derived:
-  %
-  \begin{equation}
-    \rho_\phi
-    = \frac{
-        \mathrm{mIoU}_{\mathrm{fb}}(\phi) - \mathrm{mIoU}_{\mathrm{direct}}(\phi)
-      }{
-        1 - \mathrm{mIoU}_{\mathrm{direct}}(\phi)
-      },
-    \label{eq:misreg}
-  \end{equation}
-  %
-  where $\rho_\phi \approx 1$ indicates that nearly all apparent failure is spatial misregistration rather than semantic loss, and $\rho_\phi \approx 0$ indicates pure semantic failure.
+  A high $\mathrm{mIoU}_{\mathrm{fb}}$ means the model correctly segmented
+  the object in the flipped frame (equivariant behaviour); a low value
+  indicates semantic failure that persists even after coordinate alignment.
 %--------------------------------------------------------------------
 \subsection{Evaluation Metrics}
 
@@ -331,9 +329,9 @@ To compare fragility across degradation types and prompt modalities on a common 
     S_\ell = \frac{\mathrm{mIoU}(\ell) - 1}{\ell},
     \label{eq:si}  \end{equation}
   %
-  where $\ell$ is the noise level (number of character substitutions for linguistic noise; $\sigma$ for Gaussian noise). $S_\ell \leq 0$ always; a larger magnitude indicates greater fragility per unit of noise. Spatial flips are excluded from SI as their modes (h, v, both) are categorical and carry no
-  meaningful numeric magnitude; flip results are characterised instead through direct mIoU, flip-back mIoU, and the misregistration fraction $\rho$
-  (\S\ref{sec:flips}).
+  where $\ell$ is the noise level (number of character substitutions for linguistic noise; $\sigma$ for Gaussian noise). $S_\ell \leq 0$ always; a larger magnitude indicates greater fragility per unit of noise. Spatial flips are excluded from SI as their modes (h, v, both) are
+  categorical and carry no meaningful numeric magnitude; flip results are
+  characterised through flip-back mIoU (\S\ref{sec:flips}).
 %-----------------------------------------------
 \section{Experimental Setup}
 \label{sec:expSetup}
@@ -347,7 +345,7 @@ single NVIDIA RTX 2060 GPU (6\,GB VRAM).
 
 
 For each image prompt pair, a single forward pass is performed and the resulting instance masks are encoded in COCO RLE format and appended to a JSONL
-file, one file per degradation level. This design allows each condition to be reproduced independently. All mIoU, SI, and $\rho$ values are computed offline
+file, one file per degradation level. This design allows each condition to be reproduced independently. mIoU and SI values are computed offline
 by comparing each degraded-condition JSONL file against the corresponding clean-condition JSONL file.
 
 
@@ -426,44 +424,34 @@ $\ell$ & mIoU & SI \\
 \subsection{Spatial Flips}
 \label{sec:results-flips}
 
-Table~\ref{tab:flips} reports direct mIoU, flip-back mIoU, and the
-misregistration fraction $\rho$ for each flip mode and pipeline.  Direct mIoU
+Table~\ref{tab:flips} reports direct mIoU and flip-back mIoU for each flip mode and pipeline. Direct mIoU
 is low in all cases, as expected for an unaligned comparison.  Flip-back mIoU
 recovers much of that gap, indicating that the model successfully segments the
-target object in the flipped frame.  For the SA-1B pipeline, $\rho$ ranges
-from 0.407 (vertical) to 0.675 (horizontal), meaning 41\%--68\% of the
-apparent failure is purely geometric misregistration.  The SACo-Gold pipeline
-is more spatially equivariant across all modes: $\rho$ reaches 0.865 for
-horizontal flips, indicating that 86\% of the apparent failure is
-misregistration rather than semantic loss.  Horizontal flips are consistently
-easier to recover than vertical or combined flips in both pipelines, likely
+target object in the flipped frame. Horizontal flips are consistently easier to recover than vertical or combined flips in both pipelines, likely
 because horizontal symmetry is more common in natural images.
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{llccc}
+\begin{tabular}{llcc}
 \hline
-Pipeline & Mode & Direct & Flip-back & $\rho$ \\
+Pipeline & Mode & Direct & Flip-back \\
 \hline
-\multirow{SA-1B}
-  & Horizontal & 0.094 & 0.705 & 0.675 \\
-  & Vertical   & 0.055 & 0.439 & 0.407 \\
-  & Both       & 0.031 & 0.431 & 0.413 \\
+% REFINED [old]: \multirow{}{SA-1B} → [new]: \multirow{3}{*}{SA-1B} (correct syntax: rows, width, content)
+\multirow{3}{*}{SA-1B}
+  & Horizontal & 0.094 & 0.705 \\
+  & Vertical   & 0.055 & 0.439 \\
+  & Both       & 0.031 & 0.431 \\
 \hline
-\multirow{SACo-Gold}
-  & Horizontal & 0.204 & 0.892 & 0.865 \\
-  & Vertical   & 0.134 & 0.692 & 0.644 \\
-  & Both       & 0.090 & 0.685 & 0.654 \\
+% REFINED [old]: \multirow{SACo-Gold} → [new]: \multirow{3}{*}{SACo-Gold}
+\multirow{3}{*}{SACo-Gold}
+  & Horizontal & 0.204 & 0.892 \\
+  & Vertical   & 0.134 & 0.692 \\
+  & Both       & 0.090 & 0.685 \\
 \hline
 \end{tabular}
 \vspace{3pt}
-\caption{Spatial flip results.  Direct mIoU compares flipped predictions
-         against the clean baseline without alignment.  Flip-back mIoU
-         applies the inverse transform before comparison (Eq.~\ref{eq:flipback}).
-         $\rho$ (Eq.~\ref{eq:misreg}) measures what fraction of the
-         apparent failure is geometric misregistration rather than
-         semantic loss.}
+\caption{Spatial flip results.  Direct mIoU compares flipped predictions against the clean baseline without alignment. Flip-back mIoU applies the inverse transform before comparison.}
 \label{tab:flips}
 \end{table}
 
@@ -530,10 +518,15 @@ Severe   & 0.588 & 0.813 & 0.074 \\
          both Gaussian conditions at every tier.}
 \label{tab:crossmodal}
 \end{table}
-
-%-------------------------------------------------------------------- 
 \section{Conclusion}
 \label{sec:conc}
+SPARE evaluates SAM 3 under systematic input corruption across two prompt modalities visual and linguistic. We adopt an output-stability protocol that measures prediction consistency rather than accuracy against fixed annotations, and benchmark the model under Gaussian noise, spatial flips, and typographic prompt corruptions across multiple severity levels.
+
+
+Our results show that linguistic degradation poses the greater operational risk: a single character substitution collapses output consistency far below anything observed under visual noise. We also find that concept prompts improve visual robustness compared to generic prompting.
+
+
+Future work should evaluate simultaneous visual and linguistic degradation, and test against realistic noise sources such as OCR errors to better reflect real-world deployment conditions.
 %--------------------------------------------------------------------
 {\small
 \bibliographystyle{ieee}
@@ -550,5 +543,49 @@ Bounding-box prompt jitter(expanding or shifting ground-truth boxes by
 10\%--20\%)was implemented but excluded from the main evaluation.  Prior work already characterises SAM~1/2 geometric sensitivity
 thoroughly~\cite{moskalenko2026breps}; our primary contribution is the
 text-prompt and cross-modal axes, which are entirely unstudied on SAM~3. A geometric prong for SAM~3, including combined text+geometric noise, is left to future work.
+
+\clearpage
+\onecolumn
+\subsection{Supplementary Figures}
+\label{sec:supp-figures}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figs/fig1_degradation_curves.png}
+  \caption{mIoU vs.\ Gaussian noise level $\sigma$ for the SA-1B (generic
+           prompt) and SACo-Gold (concept prompt) pipelines.  Both curves
+           anchor at mIoU,=,1 for the clean baseline and decrease
+           monotonically; SACo-Gold consistently retains higher stability,
+           reflecting the added semantic context of concept prompts.}
+  \label{fig:supp-degrad-curves}
+\end{figure}
+
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figs/fig4_prompt_length.png}
+  \caption{Per-prompt-length mIoU under text degradation.  Single-word
+           concepts collapse to near-zero stability at $\ell!=!1$
+           (one character substituted), while three-or-more-word phrases
+           retain substantial stability at the same noise level.  The gap
+           is explained by the effective corruption rate
+           $\eta = \ell/\bar{c}$: a single substitution corrupts 17% of
+           characters in a 6-character word but only 6% of a 17-character
+           phrase.}
+  \label{fig:supp-prompt-length}
+\end{figure}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.95\linewidth]{figs/fig5_cross_modal.png}
+  \caption{Cross-modal comparison of output stability under visual
+           (left) and linguistic (right) degradation in the SACo-Gold
+           pipeline.  The y-axis is shared to enable direct comparison:
+           visual mIoU degrades slowly (0.923 at $\sigma!=!10$), while
+           linguistic mIoU collapses sharply (0.323 at $\ell!=!1$),
+           illustrating the asymmetric fragility of the two input
+           modalities.}
+  \label{fig:supp-cross-modal}
+\end{figure}
 
 \end{document}
