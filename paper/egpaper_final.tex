@@ -422,16 +422,197 @@ Please refer to the author guidelines on the ICCV 2017 web page for a discussion
 of the use of color in your document.
 
 %------------------------------------------------------------------------
-\section{Final copy}
+\section{Methodology}
 
-You must include your signed IEEE copyright release form when you submit
-your finished paper. We MUST have this form before your paper can be
-published in the proceedings.
+SPARE evaluates SAM~3~\cite{peng2025sam3} under systematic input corruption across two complementary pipelines that exercise different prompt modalities. Rather than comparing model outputs against ground-truth annotations,we adopt an \emph{output-stability} paradigm: we measure how consistently SAM~3 produces the same segmentation when inputs are progressively
+corrupted, relative to its own clean-input predictions.
+
+We apply three degradation families: \emph{linguistic noise} on text prompts,
+\emph{Gaussian image noise}, and \emph{spatial flips}.  A fourth family---geometric prompt jitter---was implemented but deferred; see
+\S\ref{sec:geo-deferred}.
 
 
+%--------------------------------------------------------------------
+
+\subsection{Evaluation Pipelines}
+%SA-1B
+\paragraph{}
+The first pipeline is invoking SAM~3 with a fixed generic text prompt (\texttt{"visual"}), causing it to operate in general instance-segmentation mode. Images are drawn from
+SA-1B~\cite{kirillov2023sam}. Only image-level degradations apply to this pipeline (Gaussian noise and spatial flips); the prompt is constant and cannot
+be meaningfully corrupted.
+%SACo-Gold
+\paragraph{}
+The second pipeline is invoking SAM~3 with the concept-level text prompt stored in each SACo-Gold record (e.g.\ \texttt{"wheel"}, \texttt{"tree branch"}), drawn from the SA-1B captioner subset of SACo-Gold~\cite{meta2025saco} (13,258 image concept
+pairs). All three degradation families are applied to this pipeline.
+%--------------------------------------------------------------------
+
+\subsection{Datasets}
+\label{sec:datasets}
+  \paragraph{}
+  \textbf{SA-1B}~\cite{kirillov2023sam} is the large-scale segmentation dataset released  alongside SAM, comprising 11M images and 1.1B high-quality masks. We use it as the source for the SA-1B pipeline, where SAM~3 is run in general segmentation mode with a fixed generic prompt. Our evaluation subset consists of 10,548 images at baseline; after matching clean and degraded predictions,
+  9,442--9,443 valid pairs remain per degradation level (1,105 entries are skipped due to absent baseline matches).
+
+  \paragraph{}
+  \textbf{SACo-Gold}~\cite{meta2025saco} is the official SAM~3 evaluation benchmark,containing 156K image--concept pairs triple-annotated across seven subsets. We use the \emph{SA-1B captioner} subset, which provides 13,258 image concept pairs and 30,306 masks derived from natural-language captions of SA-1B images.
+  This subset drives the SACo-Gold pipeline, where SAM~3 is explicitly prompted with the stored concept label. After matching, 8,046--8,048 valid pairs remain
+  per degradation level (5,210 entries skipped due to absent baseline matches).
+%--------------------------------------------------------------------
+\subsection{Output-Stability Formulation}
+
+Let $f_\theta$ denote SAM~3 and $(\mathbf{x}, \mathbf{p})$ an image prompt
+pair.  Define the \emph{clean prediction}
+$\hat{\mathbf{M}}_0 = f_\theta(\mathbf{x}, \mathbf{p})$ and the \emph{degraded prediction}
+$\hat{\mathbf{M}}_\ell = f_\theta(\mathbf{x}', \mathbf{p}')$ at noise level $\ell$.  Each prediction is a set of instance masks $\{m_k\}$.
+
+% Mean IoU (mIoU).
+\paragraph{}
+For each predicted mask $m_k \in \hat{\mathbf{M}}_\ell$ we compute the maximum
+overlap with any mask in the clean baseline:
+%
+\begin{equation}
+  \mathrm{IoU}(\hat{\mathbf{M}}_\ell,\hat{\mathbf{M}}_0)
+  = \frac{1}{|\hat{\mathbf{M}}_\ell|}
+    \sum_{m_k \in \hat{\mathbf{M}}_\ell}
+    \max_{m_j \in \hat{\mathbf{M}}_0} \mathrm{IoU}(m_k, m_j).
+  \label{eq:miou-instance}
+\end{equation}
+%
+Dataset-level mIoU is the mean over all valid pairs $\mathcal{D}$:
+%
+\begin{equation}
+  \mathrm{mIoU}(\ell)
+  = \frac{1}{|\mathcal{D}|}
+    \sum_{i \in \mathcal{D}}
+    \mathrm{IoU}(\hat{\mathbf{M}}_\ell^{(i)}, \hat{\mathbf{M}}_0^{(i)}).
+  \label{eq:miou-dataset}
+\end{equation}
+%
+By construction $\mathrm{mIoU}(0) = 1.0$ for every condition.
+
+%Sensitivity Index (SI).
+\paragraph{}
+To compare fragility across degradation types and prompt modalities on a common scale, we normalise the stability drop by the noise magnitude:
+  %
+  \begin{equation}
+    S_\ell = \frac{\mathrm{mIoU}(\ell) - 1}{\ell},
+    \label{eq:si}  \end{equation}
+  %
+  where $\ell$ is the noise level (number of character substitutions for linguistic noise; $\sigma$ for Gaussian noise). $S_\ell \leq 0$ always; a larger magnitude indicates greater fragility per unit of noise. Spatial flips are excluded from SI as their modes (h, v, both) are categorical and carry no
+  meaningful numeric magnitude; flip results are characterised instead through direct mIoU, flip-back mIoU, and the misregistration fraction $\rho$
+  (\S\ref{sec:flips}).
+%--------------------------------------------------------------------
+\subsection{Linguistic Degradation}
+%Implementation.
+\paragraph{}
+Given a prompt $\mathbf{p}$, exactly $\ell$ non-space character positions are
+selected uniformly at random (without replacement) and each character $c$ is replaced with a uniformly sampled lowercase letter $c' \neq c$.  Spaces are
+protected so word boundaries are preserved.  We test three levels $\ell \in \{1, 2, 3\}$, corresponding to a single-key slip, a moderately misspelled word, and a heavily corrupted label. The source image is held fixed. This degradation is applied \emph{exclusively} to the SACo-Gold pipeline.
+
+%--------------------------------------------------------------------
+\subsection{Visual Degradation: Gaussian Noise}
+%Implementation.
+\paragraph{}
+The source image is corrupted channel-wise as:
+%
+\begin{equation}
+  \mathbf{x}' = \mathrm{clip}(\mathbf{x} + \boldsymbol{\varepsilon},\;0,\;255),
+  \quad
+  \boldsymbol{\varepsilon} \sim \mathcal{N}(\mathbf{0},\,\sigma^2\mathbf{I}).
+  \label{eq:awgn}
+\end{equation}
+%
+We test $\sigma \in \{10, 25, 50\}$, representing mild, moderate, and severe
+sensor degradation.  All prompts are held fixed.  This degradation is applied to \emph{both} pipelines.
+
+%Cross-modal comparison.
+\paragraph{}
+Applying identical Gaussian corruptions to both pipelines lets us attribute any mIoU gap between them solely to \emph{prompt modality}: the SA-1B pipeline uses a fixed generic prompt while SACo-Gold uses concept text labels. A consistent
+gap across all $\sigma$ levels reveals whether explicit text prompts provide more or less robust guidance to the visual encoder than the generic segmentation mode.
+
+%--------------------------------------------------------------------
+\subsection{Visual Degradation: Spatial Flips}
+\label{sec:flips}
+
+\paragraph{}
+  We test three modes: horizontal~(\textbf{h}), vertical~(\textbf{v}), and
+  combined~(\textbf{both}). All prompts are held fixed. This degradation is
+  applied to \emph{both} pipelines.
+
+  \paragraph{}
+  The primary metric is \textbf{flip-back mIoU}: the predicted mask
+  $\hat{\mathbf{M}}_\phi$ is mapped back to the original coordinate frame via
+  the inverse transformation $T_\phi^{-1}$ before comparison against the clean
+  baseline $\hat{\mathbf{M}}_0$:
+  %
+  \begin{equation}
+    \mathrm{mIoU}_{\mathrm{fb}}(\phi)
+    = \frac{1}{|\mathcal{D}|}
+      \sum_{i \in \mathcal{D}}
+      \mathrm{IoU}(T_\phi^{-1}(\hat{\mathbf{M}}_\phi^{(i)}),\;\hat{\mathbf{M}}_0^{(i)}).
+    \label{eq:flipback}
+  \end{equation}
+  %
+  A high $\mathrm{mIoU}_{\mathrm{fb}}$ indicates the model correctly segmented the object, but in the flipped coordinate frame equivariant behaviour. A low value indicates true semantic failure independent of coordinate alignment.
+
+  To contextualise this, we also record the \textbf{direct mIoU}: the
+  uncorrected comparison of $\hat{\mathbf{M}}_\phi$ against $\hat{\mathbf{M}}_0$
+  in the original frame (Eq.~\ref{eq:miou-dataset}). Direct mIoU is expected to be low even for a perfectly equivariant model, since the mask will land in the flipped coordinate space. It serves only as the naive baseline from which the
+  misregistration fraction is derived:
+  %
+  \begin{equation}
+    \rho_\phi
+    = \frac{
+        \mathrm{mIoU}_{\mathrm{fb}}(\phi) - \mathrm{mIoU}_{\mathrm{direct}}(\phi)
+      }{
+        1 - \mathrm{mIoU}_{\mathrm{direct}}(\phi)
+      },
+    \label{eq:misreg}
+  \end{equation}
+  %
+  where $\rho_\phi \approx 1$ indicates that nearly all apparent failure is spatial misregistration rather than semantic loss, and $\rho_\phi \approx 0$ indicates pure semantic failure.
+
+%-----------------------------------------------
+\section{Experimental Setup}
+
+\paragraph{}
+We evaluate SAM~3~\cite{peng2025sam3} loaded from the official pretrained checkpoint via the HuggingFace Transformers library (\texttt{Sam3Model},
+\texttt{Sam3Processor}). All inference is run in half-precision (\texttt{float16}). Instance segmentation outputs are post-processed with a confidence threshold of 0.5 and a mask binarisation threshold of 0.5,
+following the default SAM~3 evaluation configuration.
+
+\paragraph{}
+Experiments were conducted across two platforms: a Kaggle notebook with dual NVIDIA Tesla T4 GPUs (16\,GB VRAM each), and a personal workstation with a
+single NVIDIA RTX 2060 GPU (6\,GB VRAM).
+
+\paragraph{}
+For each image prompt pair, a single forward pass is performed and the resulting instance masks are encoded in COCO RLE format and appended to a JSONL
+file, one file per degradation level. This design allows each condition to be reproduced independently. All mIoU, SI, and $\rho$ values are computed offline
+by comparing each degraded-condition JSONL file against the corresponding clean-condition JSONL file.
+
+\paragraph{}
+Datasets are described in detail in \S\ref{sec:datasets}. The effective
+evaluation counts after baseline matching are 9,442--9,443 image pairs per degradation level for the SA-1B pipeline, and 8,046--8,048 pairs for the SACo-Gold pipeline.
+
+\paragraph{}
+Gaussian noise sampling and character substitutions involve stochastic operations. All experiments are run with a single random seed.
+
+%---------------------------------------------------------------------
+\section{Results}
+
+
+%--------------------------------------------------------------------
 {\small
 \bibliographystyle{ieee}
 \bibliography{egbib}
 }
+%---------------------------------------------------------------------
 
+\section{Appendix}
+
+\subsection{Geometric Degradation (Deferred)}
+\label{sec:geo-deferred}
+
+Bounding-box prompt jitter(expanding or shifting ground-truth boxes by
+10\%--20\%)was implemented but excluded from the main evaluation.  Prior work already characterises SAM~1/2 geometric sensitivity
+thoroughly~\cite{moskalenko2026breps}; our primary contribution is the
+text-prompt and cross-modal axes, which are entirely unstudied on SAM~3. A geometric prong for SAM~3, including combined text+geometric noise, is left to future work.
 \end{document}
