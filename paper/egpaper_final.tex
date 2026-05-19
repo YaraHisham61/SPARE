@@ -21,7 +21,7 @@
 
 % Pages are numbered in submission mode, and unnumbered in camera-ready
 %\ificcvfinal\pagestyle{empty}\fi
-\setcounter{page}{4321}
+\setcounter{page}{1}
 \begin{document}
 
 %%%%%%%%% TITLE
@@ -213,50 +213,7 @@ Prompt & \#~Evaluated & Skipped (no pred.) & mIoU \\
   \textbf{SACo-Gold}~\cite{meta2025saco} is the official SAM~3 evaluation benchmark,containing 156K image--concept pairs triple-annotated across seven subsets. We use the \emph{SA-1B captioner} subset, which provides 13,258 image concept pairs and 30,306 masks derived from natural-language captions of SA-1B images.
   This subset drives the SACo-Gold pipeline, where SAM~3 is explicitly prompted with the stored concept label. After matching, 8,046--8,048 valid pairs remain
   per degradation level (5,210 entries skipped due to absent baseline matches).
-%--------------------------------------------------------------------
-\subsection{Output-Stability Formulation}
 
-Let $f_\theta$ denote SAM~3 and $(\mathbf{x}, \mathbf{p})$ an image prompt
-pair.  Define the \emph{clean prediction}
-$\hat{\mathbf{M}}_0 = f_\theta(\mathbf{x}, \mathbf{p})$ and the \emph{degraded prediction}
-$\hat{\mathbf{M}}_\ell = f_\theta(\mathbf{x}', \mathbf{p}')$ at noise level $\ell$.  Each prediction is a set of instance masks $\{m_k\}$.
-
-% Mean IoU (mIoU).
-
-For each predicted mask $m_k \in \hat{\mathbf{M}}_\ell$ we compute the maximum
-overlap with any mask in the clean baseline:
-%
-\begin{equation}
-  \mathrm{IoU}(\hat{\mathbf{M}}_\ell,\hat{\mathbf{M}}_0)
-  = \frac{1}{|\hat{\mathbf{M}}_\ell|}
-    \sum_{m_k \in \hat{\mathbf{M}}_\ell}
-    \max_{m_j \in \hat{\mathbf{M}}_0} \mathrm{IoU}(m_k, m_j).
-  \label{eq:miou-instance}
-\end{equation}
-%
-Dataset-level mIoU is the mean over all valid pairs $\mathcal{D}$:
-%
-\begin{equation}
-  \mathrm{mIoU}(\ell)
-  = \frac{1}{|\mathcal{D}|}
-    \sum_{i \in \mathcal{D}}
-    \mathrm{IoU}(\hat{\mathbf{M}}_\ell^{(i)}, \hat{\mathbf{M}}_0^{(i)}).
-  \label{eq:miou-dataset}
-\end{equation}
-%
-By construction $\mathrm{mIoU}(0) = 1.0$ for every condition.
-
-%Sensitivity Index (SI).
-
-To compare fragility across degradation types and prompt modalities on a common scale, we normalise the stability drop by the noise magnitude:
-  %
-  \begin{equation}
-    S_\ell = \frac{\mathrm{mIoU}(\ell) - 1}{\ell},
-    \label{eq:si}  \end{equation}
-  %
-  where $\ell$ is the noise level (number of character substitutions for linguistic noise; $\sigma$ for Gaussian noise). $S_\ell \leq 0$ always; a larger magnitude indicates greater fragility per unit of noise. Spatial flips are excluded from SI as their modes (h, v, both) are categorical and carry no
-  meaningful numeric magnitude; flip results are characterised instead through direct mIoU, flip-back mIoU, and the misregistration fraction $\rho$
-  (\S\ref{sec:flips}).
 %--------------------------------------------------------------------
 \subsection{Linguistic Degradation}
 Given a prompt $\mathbf{p}$, exactly $\ell$ non-space character positions are
@@ -337,7 +294,50 @@ We test three modes: horizontal~(\textbf{h}), vertical~(\textbf{v}), and combine
   \end{equation}
   %
   where $\rho_\phi \approx 1$ indicates that nearly all apparent failure is spatial misregistration rather than semantic loss, and $\rho_\phi \approx 0$ indicates pure semantic failure.
+%--------------------------------------------------------------------
+\subsection{Evaluation Metrics}
 
+Let $f_\theta$ denote SAM~3 and $(\mathbf{x}, \mathbf{p})$ an image prompt
+pair.  Define the \emph{clean prediction}
+$\hat{\mathbf{M}}_0 = f_\theta(\mathbf{x}, \mathbf{p})$ and the \emph{degraded prediction}
+$\hat{\mathbf{M}}_\ell = f_\theta(\mathbf{x}', \mathbf{p}')$ at noise level $\ell$.  Each prediction is a set of instance masks $\{m_k\}$.
+
+% Mean IoU (mIoU).
+
+For each predicted mask $m_k \in \hat{\mathbf{M}}_\ell$ we compute the maximum
+overlap with any mask in the clean baseline:
+%
+\begin{equation}
+  \mathrm{IoU}(\hat{\mathbf{M}}_\ell,\hat{\mathbf{M}}_0)
+  = \frac{1}{|\hat{\mathbf{M}}_\ell|}
+    \sum_{m_k \in \hat{\mathbf{M}}_\ell}
+    \max_{m_j \in \hat{\mathbf{M}}_0} \mathrm{IoU}(m_k, m_j).
+  \label{eq:miou-instance}
+\end{equation}
+%
+Dataset-level mIoU is the mean over all valid pairs $\mathcal{D}$:
+%
+\begin{equation}
+  \mathrm{mIoU}(\ell)
+  = \frac{1}{|\mathcal{D}|}
+    \sum_{i \in \mathcal{D}}
+    \mathrm{IoU}(\hat{\mathbf{M}}_\ell^{(i)}, \hat{\mathbf{M}}_0^{(i)}).
+  \label{eq:miou-dataset}
+\end{equation}
+%
+By construction $\mathrm{mIoU}(0) = 1.0$ for every condition.
+
+%Sensitivity Index (SI).
+
+To compare fragility across degradation types and prompt modalities on a common scale, we normalise the stability drop by the noise magnitude:
+  %
+  \begin{equation}
+    S_\ell = \frac{\mathrm{mIoU}(\ell) - 1}{\ell},
+    \label{eq:si}  \end{equation}
+  %
+  where $\ell$ is the noise level (number of character substitutions for linguistic noise; $\sigma$ for Gaussian noise). $S_\ell \leq 0$ always; a larger magnitude indicates greater fragility per unit of noise. Spatial flips are excluded from SI as their modes (h, v, both) are categorical and carry no
+  meaningful numeric magnitude; flip results are characterised instead through direct mIoU, flip-back mIoU, and the misregistration fraction $\rho$
+  (\S\ref{sec:flips}).
 %-----------------------------------------------
 \section{Experimental Setup}
 \label{sec:expSetup}
@@ -364,27 +364,177 @@ All experiments are run with a single random seed as gaussian noise sampling and
 %---------------------------------------------------------------------
 \section{Results}
 \label{sec:results}
-%--------------------------------------------------------------------
-\subsection{Linguistic Fragility by Prompt Length}                      \label{sec:results-text-length}                                        Table~\ref{tab:prompt-length-si} reports mean IoU and Sensitivity Index foreach word-count bucket across noise levels $\ell \in \{1,2,3\}$.
+
+\subsection{Gaussian Noise}
+\label{sec:results-gaussian}
+
+Table~\ref{tab:gaussian} shows output stability under Gaussian noise for both
+pipelines.  The SA-1B pipeline loses stability steadily, dropping from mIoU\,=\,0.758 at $\sigma$\,=\,10 to
+0.588 at $\sigma$\,=\,50.  The SACo-Gold pipeline
+is notably more robust across all levels, reaching only 0.813 at the
+highest severity.  Concept prompts appear to provide stronger guidance to the model's visual encoder when image quality degrades.
 
 \begin{table}[h]
-\centering 
-\small 
-\begin{tabular}{lccc}
-\hline 
-Bucket & SI($\ell$=1) & SI($\ell$=2) & SI($\ell$=3) \\ 
-\hline 
-\texttt{1-word}   & -0.9733  & -0.4956  & -0.3327 \\ 
-\texttt{2-word}   &-0.7923  & -0.4736  & -0.3276 \\ 
-\texttt{3+-word}  &-0.5168  & -0.3733 &  -0.2884 \\      
-\hline 
+\centering
+\small
+\begin{tabular}{lcccc}
+\hline
+& \multicolumn{2}{c}{SA-1B} & \multicolumn{2}{c}{SACo-Gold} \\
+$\sigma$ & mIoU & SI & mIoU & SI \\
+\hline
+10 & 0.758 & $-$0.0242 & 0.923 & $-$0.0077 \\
+25 & 0.661 & $-$0.0136 & 0.869 & $-$0.0053 \\
+50 & 0.588 & $-$0.0082 & 0.813 & $-$0.0037 \\
+\hline
 \end{tabular}
 \vspace{3pt}
-\caption{Sensitivity Index per prompt-length bucket under linguistic
-degradation (SACo-Gold pipeline).  A larger magnitude indicates greater fragility per unit of noise. Effective corruption rates
-at $\ell$=1 are 17\%, 11\%, and 6\% for 1-, 2-, and 3+-word buckets respectively.}
+\caption{Output stability under Gaussian noise.
+         mIoU measures consistency with the clean baseline;
+         SI (Eq.~\ref{eq:si}) normalises the drop by $\sigma$.
+         SACo-Gold is more robust than SA-1B at every level.}
+\label{tab:gaussian}
+\end{table}
+
+%--------------------------------------------------------------------
+\subsection{Text Degradation}
+\label{sec:results-text}
+
+Table~\ref{tab:text} shows output stability under linguistic noise on the
+SACo-Gold pipeline.  A single character substitution ($\ell$\,=\,1) reduces
+mIoU from 1.0 to 0.323 — a drop of 0.677, far larger than anything observed
+under visual noise.  Two substitutions push mIoU below 0.15; three leave
+almost no consistent output (mIoU\,=\,0.074).  SAM~3's concept-prompt
+pipeline is highly sensitive to even minimal typographic corruption.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\hline
+$\ell$ & mIoU & SI \\
+\hline
+1 & 0.323 & $-$0.677 \\
+2 & 0.148 & $-$0.426 \\
+3 & 0.074 & $-$0.309 \\
+\hline
+\end{tabular}
+\vspace{3pt}
+\caption{Output stability under linguistic noise (SACo-Gold pipeline).
+         mIoU\,=\,1.0 at $\ell$\,=\,0 by construction.
+         A single character substitution causes a 68\% drop in SI.}
+\label{tab:text}
+\end{table}
+
+%--------------------------------------------------------------------
+
+\subsection{Spatial Flips}
+\label{sec:results-flips}
+
+Table~\ref{tab:flips} reports direct mIoU, flip-back mIoU, and the
+misregistration fraction $\rho$ for each flip mode and pipeline.  Direct mIoU
+is low in all cases, as expected for an unaligned comparison.  Flip-back mIoU
+recovers much of that gap, indicating that the model successfully segments the
+target object in the flipped frame.  For the SA-1B pipeline, $\rho$ ranges
+from 0.407 (vertical) to 0.675 (horizontal), meaning 41\%--68\% of the
+apparent failure is purely geometric misregistration.  The SACo-Gold pipeline
+is more spatially equivariant across all modes: $\rho$ reaches 0.865 for
+horizontal flips, indicating that 86\% of the apparent failure is
+misregistration rather than semantic loss.  Horizontal flips are consistently
+easier to recover than vertical or combined flips in both pipelines, likely
+because horizontal symmetry is more common in natural images.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llccc}
+\hline
+Pipeline & Mode & Direct & Flip-back & $\rho$ \\
+\hline
+\multirow{SA-1B}
+  & Horizontal & 0.094 & 0.705 & 0.675 \\
+  & Vertical   & 0.055 & 0.439 & 0.407 \\
+  & Both       & 0.031 & 0.431 & 0.413 \\
+\hline
+\multirow{SACo-Gold}
+  & Horizontal & 0.204 & 0.892 & 0.865 \\
+  & Vertical   & 0.134 & 0.692 & 0.644 \\
+  & Both       & 0.090 & 0.685 & 0.654 \\
+\hline
+\end{tabular}
+\vspace{3pt}
+\caption{Spatial flip results.  Direct mIoU compares flipped predictions
+         against the clean baseline without alignment.  Flip-back mIoU
+         applies the inverse transform before comparison (Eq.~\ref{eq:flipback}).
+         $\rho$ (Eq.~\ref{eq:misreg}) measures what fraction of the
+         apparent failure is geometric misregistration rather than
+         semantic loss.}
+\label{tab:flips}
+\end{table}
+
+%--------------------------------------------------------------------
+\subsection{Linguistic Fragility by Prompt Length}
+\label{sec:results-text-length}
+
+Table~\ref{tab:prompt-length-si} breaks down text degradation by prompt
+word count.  Single-word concepts are the most fragile: one substitution
+reduces mIoU to just 0.027 (SI\,=\,$-$0.973), nearly complete collapse.
+Two-word prompts are more resilient but still degrade sharply.
+Three-or-more-word phrases retain substantially more stability at $\ell$\,=\,1
+(mIoU\,=\,0.483), consistent with their lower effective corruption rate
+of 6\% compared to 17\% for single-word concepts.  The result confirms
+that fragility under character-level noise scales with the fraction of the prompt that is corrupted, not just the absolute number of substitutions.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcccccc}
+\hline
+& \multicolumn{2}{c}{$\ell$=1} & \multicolumn{2}{c}{$\ell$=2} & \multicolumn{2}{c}{$\ell$=3} \\
+B & mIoU & SI & mIoU & SI & mIoU & SI \\
+\hline
+1   & 0.027 & $-$0.973 & 0.009 & $-$0.496 & 0.002 & $-$0.333 \\
+2   & 0.208 & $-$0.792 & 0.053 & $-$0.474 & 0.017 & $-$0.328 \\
+3+  & 0.483 & $-$0.517 & 0.253 & $-$0.373 & 0.135 & $-$0.288 \\
+\hline
+\end{tabular}
+\vspace{3pt}
+\caption{mIoU and SI per prompt-length bucket under linguistic degradation (SACo-Gold pipeline).  Effective corruption rates at $\ell$\,=\,1 are 17\%, 11\%, and 6\% for 1-, 2-, and
+         3+-word buckets respectively.}
 \label{tab:prompt-length-si}
 \end{table}
+%--------------------------------------------------------------------
+
+\subsection{Visual vs.\ Linguistic Fragility}
+\label{sec:results-crossmodal}
+
+Table~\ref{tab:crossmodal} pairs Gaussian and text noise at three
+matched severity tiers.
+At every tier, a single-digit number of character substitutions does more
+damage to output consistency than the strongest Gaussian corruption tested.
+At mild severity, text degrades mIoU to 0.323
+while Gaussian keeps both pipelines above 0.758. At severe severity, text reaches 0.074 while Gaussian stays above 0.588.
+\begin{table}[h]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lccc}
+\hline
+Tier & SA-1B\textsuperscript{G} & SACo\textsuperscript{G} & SACo\textsuperscript{T} \\
+\hline
+Mild     & 0.758 & 0.923 & 0.323 \\
+Moderate & 0.661 & 0.869 & 0.148 \\
+Severe   & 0.588 & 0.813 & 0.074 \\
+\hline
+\end{tabular}
+\vspace{3pt}
+\caption{mIoU at matched severity tiers.
+         G\,=\,Gaussian ($\sigma$\,=\,10/25/50),
+         T\,=\,text ($\ell$\,=\,1/2/3).
+         Text corruption (right column) degrades stability far below
+         both Gaussian conditions at every tier.}
+\label{tab:crossmodal}
+\end{table}
+
 %-------------------------------------------------------------------- 
 \section{Conclusion}
 \label{sec:conc}
