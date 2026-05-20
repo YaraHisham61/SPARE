@@ -1,0 +1,10 @@
+Metric,Value
+Samples Evaluated,20
+Total Configurations,1280
+Baseline mIoU (mean),0.8359
+Average mIoU Drop,0.3332
+Maximum mIoU Drop,0.9772
+Geometric Sensitivity,0.002511
+Linguistic Sensitivity,0.002505
+Visual Sensitivity,0.002518
+Most Sensitive Modality,Visual

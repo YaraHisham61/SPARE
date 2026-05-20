@@ -2,8 +2,13 @@ import json
 import matplotlib
 import numpy as np
 import cv2
+import os
 from constants import *
 
+def load_sample(image_name):
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    image_path = os.path.join(root_dir, DATA_DIR, f"{image_name}.jpg")
+    json_path = os.path.join(root_dir, DATA_DIR, f"{image_name}.json")
 def load_sa1b_sample(image_name):
     image_path = f"{image_name}.jpg"
     json_path = f"{image_name}.json"

@@ -59,6 +59,17 @@ uv venv --python $(which python) --system-site-packages
 uv sync
 ```
 
+## Running robustness experiments
+- Generate synthetic data for testing:
+```bash
+uv run python scripts/generate_synthetic_data.py
+```
+- Run the SAM3 robustness evaluation pipeline:
+```bash
+uv run python scripts/evaluate_robustness.py
+```
+
+Note: `scripts/evaluate_robustness.py` requires the SAM3 model weights locally at `models/sam3` or authenticated access to `facebook/sam3` on Hugging Face.
 **activate**
 ```bash
 # linux / macOS
